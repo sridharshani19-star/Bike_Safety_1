@@ -1,0 +1,2202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="We Care We Alert">
+<meta name="mobile-web-app-capable" content="yes">
+<title>We Care, We Alert</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+:root{
+  --black:#000000; --bg:#121212; --elev:#181818; --card:#242424;
+  --card2:#2A2A2A; --line:#2F2F2F;
+  --ink:#FFFFFF; --sub:#B3B3B3; --dim:#6A6A6A;
+  --green:#1DB954; --greenD:#169C46;
+  --red:#F03A47; --amber:#FFC531; --blue:#3B82F6; --violet:#A855F7;
+  --accent:#1DB954;
+  --e:cubic-bezier(.3,0,.2,1);
+  --tabh:66px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;height:100%}
+body{
+  background:var(--black); color:var(--ink);
+  font-family:'Figtree',system-ui,-apple-system,sans-serif;
+  -webkit-font-smoothing:antialiased; overflow-x:hidden;
+}
+
+/* ============ SPLASH ============ */
+#splash{position:fixed;inset:0;z-index:999;background:#000;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:26px;transition:opacity .55s var(--e),visibility .55s}
+#splash.gone{opacity:0;visibility:hidden}
+#splash .logoWrap{width:min(68vw,300px);animation:logoIn .9s var(--e) both}
+#splash img,#splash svg{width:100%;height:auto;display:block}
+@keyframes logoIn{from{opacity:0;transform:scale(.86)}to{opacity:1;transform:none}}
+#splash .tag{font-size:12px;letter-spacing:.42em;text-transform:uppercase;
+  color:var(--dim);font-weight:600;animation:fadeUp .8s .35s var(--e) both}
+#splash .bar{width:132px;height:3px;border-radius:3px;background:#1E1E1E;
+  overflow:hidden;animation:fadeUp .8s .5s var(--e) both}
+#splash .bar i{display:block;height:100%;width:0;background:var(--green);
+  border-radius:3px;animation:load 2.4s .3s var(--e) forwards}
+@keyframes load{to{width:100%}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+/* ============ LOGIN ============ */
+#login{position:fixed;inset:0;z-index:900;background:var(--black);
+  overflow-y:auto;display:none;
+  background-image:radial-gradient(120% 55% at 50% 0%,rgba(29,185,84,.20),transparent 62%)}
+#login.show{display:block;animation:fadeUp .5s var(--e)}
+.lwrap{max-width:420px;margin:0 auto;padding:64px 26px 46px;
+  min-height:100%;display:flex;flex-direction:column;justify-content:center}
+.lmark{width:74px;margin:0 auto 26px}
+.lmark svg{width:100%;height:auto;display:block}
+#login h1{font-size:clamp(31px,8.4vw,42px);font-weight:900;letter-spacing:-.025em;
+  line-height:1.06;margin:0 0 10px;text-align:center}
+#login .p{font-size:14.5px;line-height:1.55;color:var(--sub);text-align:center;
+  margin:0 0 34px}
+.lfield{margin-bottom:15px}
+.lfield label{display:block;font-size:12px;font-weight:700;letter-spacing:.02em;
+  margin-bottom:8px;color:var(--ink)}
+.lfield input{width:100%;background:var(--card);border:1px solid var(--line);
+  border-radius:5px;color:var(--ink);padding:14px 15px;font-size:15px;
+  font-family:'Figtree',sans-serif;outline:none;transition:border-color .2s}
+.lfield input:focus{border-color:var(--ink)}
+.lfield input::placeholder{color:var(--dim)}
+.lerr{background:rgba(240,58,71,.14);border:1px solid rgba(240,58,71,.4);
+  border-radius:5px;padding:11px 13px;font-size:13px;color:#FF9AA2;
+  margin-bottom:15px;display:none}
+.lerr.show{display:block;animation:shake .4s}
+@keyframes shake{0%,100%{transform:translateX(0)}
+  25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.lbtn{width:100%;background:var(--green);color:#000;border:none;border-radius:500px;
+  padding:16px;font-size:15.5px;font-weight:800;letter-spacing:.02em;cursor:pointer;
+  font-family:'Figtree',sans-serif;transition:transform .12s var(--e),background .2s}
+.lbtn:hover{background:#1ED760;transform:scale(1.02)}
+.lbtn:active{transform:scale(.98)}
+.lnote{font-size:12px;line-height:1.65;color:var(--dim);text-align:center;
+  margin-top:24px;padding-top:20px;border-top:1px solid var(--line)}
+/* ============ APP SHELL ============ */
+#app{display:none}
+#app.show{display:block}
+.shell{max-width:660px;margin:0 auto;min-height:100%;
+  padding-bottom:calc(var(--tabh) + env(safe-area-inset-bottom,0px) + 20px);
+  background:linear-gradient(180deg,#1E1E1E 0%,var(--bg) 240px)}
+
+.topbar{position:sticky;top:0;z-index:60;padding:14px 18px 12px;
+  background:rgba(18,18,18,0);backdrop-filter:blur(0px);
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  transition:background .25s,backdrop-filter .25s}
+.topbar.stuck{background:rgba(10,10,10,.86);backdrop-filter:blur(16px)}
+.brand{display:flex;align-items:center;gap:10px;min-width:0}
+.brand .bmk{width:30px;height:30px;flex:none}
+.brand .bt{font-size:14.5px;font-weight:800;letter-spacing:-.01em;line-height:1.15;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.brand .bs{display:block;font-size:10px;font-weight:600;color:var(--dim);
+  letter-spacing:.14em;text-transform:uppercase;margin-top:2px}
+.avatar{width:32px;height:32px;border-radius:50%;flex:none;display:flex;
+  align-items:center;justify-content:center;font-size:13px;font-weight:800;
+  color:#000;cursor:pointer;transition:transform .15s var(--e)}
+.avatar:active{transform:scale(.92)}
+
+.page{display:none;animation:pgIn .34s var(--e)}
+.page.active{display:block}
+@keyframes pgIn{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:none}}
+
+.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:70;
+  height:calc(var(--tabh) + env(safe-area-inset-bottom,0px));
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  background:linear-gradient(180deg,rgba(0,0,0,.7),#000 62%);
+  backdrop-filter:blur(20px);display:flex;max-width:660px;margin:0 auto}
+.tab{flex:1;background:none;border:none;cursor:pointer;padding:10px 2px 8px;
+  display:flex;flex-direction:column;align-items:center;gap:5px;color:var(--dim);
+  transition:color .2s;position:relative;font-family:'Figtree',sans-serif}
+.tab svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.9;
+  stroke-linecap:round;stroke-linejoin:round;transition:transform .2s var(--e)}
+.tab span{font-size:10.5px;font-weight:600;letter-spacing:.01em}
+.tab.on{color:var(--ink)}
+.tab.on svg{transform:translateY(-1px) scale(1.06)}
+.tab .pip{position:absolute;top:7px;right:calc(50% - 17px);width:8px;height:8px;
+  border-radius:50%;background:var(--red);display:none;
+  box-shadow:0 0 0 2px #000}
+.tab .pip.show{display:block;animation:pulseDot 1.6s ease-in-out infinite}
+@keyframes pulseDot{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* ============ HERO / STATUS ============ */
+.hero{padding:8px 18px 20px}
+.greet{font-size:13px;font-weight:600;color:var(--sub);margin-bottom:14px}
+.statuscard{border-radius:12px;padding:20px;position:relative;overflow:hidden;
+  background:linear-gradient(150deg,#1F4D33,#123322 55%,#151515);
+  transition:background .5s var(--e)}
+body.danger .statuscard{background:linear-gradient(150deg,#5A1720,#3A0E14 55%,#1A0A0C);
+  animation:dangerPulse 2s ease-in-out infinite}
+@keyframes dangerPulse{0%,100%{box-shadow:0 0 0 0 rgba(240,58,71,0)}
+  50%{box-shadow:0 0 40px 0 rgba(240,58,71,.22)}}
+.statuscard .row1{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+.pill{display:inline-flex;align-items:center;gap:7px;background:rgba(255,255,255,.1);
+  border-radius:500px;padding:6px 12px;font-size:11px;font-weight:700;
+  letter-spacing:.06em;text-transform:uppercase;margin-bottom:14px}
+.pill .d{width:7px;height:7px;border-radius:50%;background:var(--green)}
+body.danger .pill .d{background:var(--red);animation:pulseDot 1.1s ease-in-out infinite}
+.statuscard h1{font-size:clamp(30px,8.6vw,44px);font-weight:900;letter-spacing:-.03em;
+  line-height:.98;margin:0}
+.statuscard .sub{font-size:14px;line-height:1.5;color:rgba(255,255,255,.78);
+  margin:12px 0 0;max-width:38ch}
+.ring{width:86px;height:86px;flex:none;position:relative;display:none}
+body.tracking .ring{display:block}
+.ring svg{transform:rotate(-90deg)}
+.ring .t{fill:none;stroke:rgba(255,255,255,.14);stroke-width:6}
+.ring .a{fill:none;stroke:var(--green);stroke-width:6;stroke-linecap:round;
+  transition:stroke-dashoffset .6s var(--e),stroke .35s}
+body.danger .ring .a{stroke:var(--red)}
+.ring .lb{position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center}
+.ring .n{font-family:'IBM Plex Mono',monospace;font-size:20px;font-weight:600}
+.ring .u{font-size:8px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  color:rgba(255,255,255,.6);margin-top:3px}
+
+/* ============ CARDS / TILES ============ */
+.tiles{padding:0 18px;display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
+.tile{background:var(--card);border-radius:9px;padding:14px 15px;
+  transition:background .2s;display:flex;align-items:center;gap:12px}
+.tile:hover{background:var(--card2)}
+.tile .ic{width:34px;height:34px;border-radius:7px;flex:none;display:flex;
+  align-items:center;justify-content:center}
+.tile .ic svg{width:17px;height:17px;stroke:#000;fill:none;stroke-width:2.2;
+  stroke-linecap:round;stroke-linejoin:round}
+.tile .tx{min-width:0}
+.tile .k{font-size:10.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--dim);margin-bottom:3px}
+.tile .v{font-family:'IBM Plex Mono',monospace;font-size:17px;font-weight:600;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tile .v.sm{font-size:13px}
+.tile .v.hot{color:var(--red)} .tile .v.ok{color:var(--green)}
+
+.sec{padding:26px 18px 0}
+.sec h2{font-size:21px;font-weight:800;letter-spacing:-.02em;margin:0 0 13px;
+  display:flex;align-items:center;justify-content:space-between;gap:12px}
+.badge{background:var(--card);border-radius:500px;padding:4px 11px;font-size:11.5px;
+  font-weight:700;color:var(--sub)}
+.badge.hot{background:rgba(240,58,71,.18);color:var(--red)}
+.badge.ok{background:rgba(29,185,84,.16);color:var(--green)}
+
+.btn{width:100%;border:none;border-radius:500px;padding:15px;font-size:15px;
+  font-weight:800;letter-spacing:.01em;cursor:pointer;font-family:'Figtree',sans-serif;
+  transition:transform .12s var(--e),background .2s,filter .2s;display:block;
+  text-align:center;text-decoration:none}
+.btn:active{transform:scale(.977)}
+.btn:disabled{opacity:.45;cursor:default}
+.b-green{background:var(--green);color:#000}
+.b-green:hover{background:#1ED760}
+.b-white{background:var(--ink);color:#000}
+.b-red{background:var(--red);color:#fff}
+.b-red:hover{filter:brightness(1.08)}
+.b-out{background:transparent;color:var(--ink);border:1px solid #4A4A4A}
+.b-out:hover{border-color:var(--ink)}
+.b-out.on{border-color:var(--green);color:var(--green)}
+.acts{padding:16px 18px 0;display:grid;gap:10px}
+
+.list{background:var(--elev);border-radius:10px;overflow:hidden}
+.li{display:flex;align-items:center;justify-content:space-between;gap:14px;
+  padding:13px 15px;border-bottom:1px solid rgba(255,255,255,.05);font-size:14px}
+.li:last-child{border-bottom:none}
+.li .k{color:var(--sub);font-weight:500}
+.li .v{font-family:'IBM Plex Mono',monospace;font-size:13px;text-align:right}
+.li .v.hot{color:var(--red)} .li .v.ok{color:var(--green)}
+.empty{font-size:14px;line-height:1.55;color:var(--dim);padding:16px 2px;margin:0}
+.fresh{display:inline-block;width:7px;height:7px;border-radius:50%;
+  background:var(--green);margin-right:7px;animation:pulseDot 2s ease-in-out infinite}
+.fresh.stale{background:var(--dim);animation:none}
+/* ============ ALERT + RESPONDER CARDS ============ */
+.alrt{background:var(--elev);border-radius:10px;padding:15px 16px;margin-bottom:10px;
+  animation:slideIn .42s var(--e);position:relative;overflow:hidden}
+@keyframes slideIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.alrt .ah{display:flex;align-items:center;gap:9px;margin-bottom:7px}
+.alrt .ai{width:26px;height:26px;border-radius:50%;flex:none;display:flex;
+  align-items:center;justify-content:center;background:rgba(255,197,49,.16)}
+.alrt.red .ai{background:rgba(240,58,71,.18)}
+.alrt .ai svg{width:14px;height:14px;stroke:var(--amber);fill:none;stroke-width:2.3;
+  stroke-linecap:round;stroke-linejoin:round}
+.alrt.red .ai svg{stroke:var(--red)}
+.alrt .at{font-size:14.5px;font-weight:800;letter-spacing:-.01em;color:var(--amber)}
+.alrt.red .at{color:var(--red)}
+.alrt .ab{font-size:13.5px;line-height:1.55;color:var(--sub)}
+.alrt .aw{font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--dim);
+  margin-top:9px}
+
+.respbox{margin-top:13px;padding-top:13px;border-top:1px solid rgba(255,255,255,.07)}
+.resphead{font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--dim);margin-bottom:9px}
+.resp{display:flex;align-items:center;gap:10px;padding:8px 0;font-size:13.5px}
+.resp .dot{width:26px;height:26px;border-radius:50%;flex:none;display:flex;
+  align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#000}
+.resp .nm{font-weight:700}
+.resp .st{color:var(--sub);font-size:12.5px}
+.proceedBtn{margin-top:11px}
+.proceedBtn.done{background:rgba(29,185,84,.16);color:var(--green);
+  border:1px solid rgba(29,185,84,.4)}
+
+/* ============ SEARCH / TRIP ============ */
+.field{display:flex;align-items:center;gap:11px;background:var(--card);
+  border:1px solid transparent;border-radius:8px;padding:0 14px;margin-bottom:9px;
+  transition:border-color .2s,background .2s}
+.field:focus-within{border-color:#5A5A5A;background:var(--card2)}
+.pin{width:11px;height:11px;border-radius:50%;flex:none}
+.pin.a{background:var(--green)} .pin.b{background:var(--red)}
+.field input{flex:1;background:none;border:none;outline:none;color:var(--ink);
+  font-family:'Figtree',sans-serif;font-size:15px;padding:15px 0;min-width:0}
+.field input::placeholder{color:var(--dim)}
+.mini{background:rgba(255,255,255,.09);border:none;color:var(--ink);border-radius:500px;
+  padding:7px 12px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;
+  font-family:'Figtree',sans-serif;transition:background .2s}
+.mini:hover{background:rgba(255,255,255,.17)}
+.sug{background:var(--card2);border-radius:8px;margin:-3px 0 10px;overflow:hidden;
+  box-shadow:0 12px 34px rgba(0,0,0,.55)}
+.sug div{padding:12px 14px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,.05)}
+.sug div:last-child{border-bottom:none}
+.sug div:hover{background:#333}
+.sug .nm{font-size:13.5px;line-height:1.35}
+.sug .meta{display:flex;align-items:center;gap:8px;margin-top:5px;flex-wrap:wrap}
+.chipx{font-size:9.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  padding:3px 8px;border-radius:500px;background:rgba(29,185,84,.16);color:var(--green)}
+.chipx.road{background:rgba(168,85,247,.18);color:var(--violet)}
+.chipx.poi{background:rgba(255,197,49,.16);color:var(--amber)}
+.away{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--dim)}
+.sug .sechead{padding:10px 14px 6px;font-size:10px;font-weight:700;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--dim);cursor:default}
+.sug .sechead:hover{background:none}
+.swap{display:flex;justify-content:center;margin:-2px 0 4px}
+.swap button{background:var(--card);border:none;color:var(--sub);width:34px;height:34px;
+  border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  transition:background .2s,color .2s}
+.swap button:hover{background:var(--card2);color:var(--ink)}
+.swap svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2}
+.hint{font-size:12.5px;line-height:1.5;color:var(--dim);margin:2px 0 0}
+
+.chips{display:flex;gap:9px;overflow-x:auto;padding:14px 18px 2px}
+.chips::-webkit-scrollbar{display:none}
+.rchip{flex:none;background:var(--card);border:1px solid transparent;border-radius:9px;
+  padding:12px 15px;cursor:pointer;min-width:146px;transition:all .2s}
+.rchip.on{border-color:var(--green);background:rgba(29,185,84,.09)}
+.rchip .lb{font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;
+  color:var(--dim);margin-bottom:6px}
+.rchip.on .lb{color:var(--green)}
+.rchip .mn{font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:600}
+.rchip .zn{font-size:11.5px;font-weight:700;margin-top:5px}
+.rchip .zn.g{color:var(--green)} .rchip .zn.r{color:var(--red)}
+
+.sumry{margin:15px 18px 0;background:var(--elev);border-radius:11px;padding:16px 17px;
+  display:none;animation:slideIn .42s var(--e)}
+.sumry.show{display:block}
+.sumry.risky{background:linear-gradient(150deg,rgba(240,58,71,.14),var(--elev) 62%)}
+.srow{display:flex;gap:24px;flex-wrap:wrap}
+.sit .k{font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--dim);margin-bottom:5px}
+.sit .v{font-family:'IBM Plex Mono',monospace;font-size:21px;font-weight:600}
+.sit .v.warn{color:var(--red)} .sit .v.safe{color:var(--green)}
+.snote{font-size:13px;line-height:1.55;color:var(--sub);margin-top:13px;
+  padding-top:12px;border-top:1px solid rgba(255,255,255,.07)}
+
+.navbox{margin:15px 18px 0;border-radius:11px;padding:18px;display:none;
+  background:linear-gradient(150deg,rgba(29,185,84,.14),var(--elev) 62%)}
+.navbox.show{display:block;animation:slideIn .42s var(--e)}
+.navbox.warn{background:linear-gradient(150deg,rgba(255,197,49,.16),var(--elev) 62%)}
+.navbox.crit{background:linear-gradient(150deg,rgba(240,58,71,.2),var(--elev) 62%);
+  animation:dangerPulse 1.4s ease-in-out infinite}
+.navbox .lab{font-size:10.5px;font-weight:700;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--dim);margin-bottom:9px}
+.navbox .big{font-size:31px;font-weight:900;letter-spacing:-.025em;line-height:1}
+.navbox .big.g{color:var(--green)} .navbox .big.a{color:var(--amber)}
+.navbox .big.r{color:var(--red)}
+.navbox .det{font-size:13.5px;line-height:1.55;color:var(--sub);margin-top:10px}
+.navbox .mono{font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:var(--dim);
+  margin-top:9px}
+/* ============ MAP ============ */
+.mapwrap{padding:0 18px}
+#map{height:46vh;min-height:270px;border-radius:11px;background:var(--elev)}
+#hmap{height:34vh;min-height:210px;border-radius:11px;background:var(--elev);margin-top:4px}
+.leaflet-container{background:var(--elev)}
+.leaflet-container.light{background:#EAE8E3}
+.leaflet-control-attribution{background:rgba(0,0,0,.62)!important;color:#777!important;
+  font-size:9px!important}
+.leaflet-control-attribution a{color:#999!important}
+.leaflet-container.light .leaflet-control-attribution{
+  background:rgba(255,255,255,.85)!important;color:#5F6368!important}
+.leaflet-container.light .leaflet-control-attribution a{color:#1A73E8!important}
+.leaflet-bar a{background:#242424!important;color:#fff!important;border-color:#333!important}
+.leaflet-container.light .leaflet-bar a{background:#fff!important;color:#3C4043!important;
+  border-color:#DADCE0!important}
+.leaflet-popup-content-wrapper{background:var(--card2);color:var(--ink);border-radius:9px;
+  box-shadow:0 10px 32px rgba(0,0,0,.6)}
+.leaflet-popup-tip{background:var(--card2)}
+.leaflet-popup-content{font-family:'Figtree',sans-serif;font-size:13px;line-height:1.5}
+.leaflet-popup-content b{font-weight:800}
+.leaflet-popup-content a{color:var(--green);font-weight:700}
+.leaflet-container.light .leaflet-popup-content-wrapper,
+.leaflet-container.light .leaflet-popup-tip{background:#fff;color:#202124}
+.leaflet-container.light .leaflet-popup-content a{color:#1A73E8}
+
+.mapstyle{display:flex;gap:8px;padding:0 18px 11px;overflow-x:auto}
+.mapstyle::-webkit-scrollbar{display:none}
+.msbtn{flex:none;background:var(--card);border:1px solid transparent;color:var(--sub);
+  border-radius:500px;padding:8px 15px;cursor:pointer;font-family:'Figtree',sans-serif;
+  font-size:12.5px;font-weight:700;transition:all .2s}
+.msbtn.on{background:var(--ink);color:#000}
+
+/* danger marker built from a div so it can carry an icon and a pulse */
+.dzn{position:relative;width:42px;height:42px}
+.dzn .pulse{position:absolute;inset:0;border-radius:50%;background:rgba(240,58,71,.35);
+  animation:dzPulse 2s ease-out infinite}
+@keyframes dzPulse{0%{transform:scale(.55);opacity:.85}100%{transform:scale(1.7);opacity:0}}
+.dzn .tri{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  width:30px;height:30px;filter:drop-shadow(0 3px 7px rgba(0,0,0,.65))}
+.usr{width:30px;height:30px;position:relative}
+.usr .ring2{position:absolute;inset:0;border-radius:50%;border:2.5px solid #fff;
+  box-shadow:0 2px 9px rgba(0,0,0,.55)}
+.usr .in{position:absolute;inset:4px;border-radius:50%}
+.usr .lbl{position:absolute;top:33px;left:50%;transform:translateX(-50%);
+  background:rgba(0,0,0,.82);color:#fff;font-size:10px;font-weight:700;
+  padding:3px 8px;border-radius:500px;white-space:nowrap;
+  font-family:'Figtree',sans-serif}
+.leaflet-container.light .usr .lbl{background:rgba(255,255,255,.94);color:#202124;
+  box-shadow:0 2px 8px rgba(0,0,0,.22)}
+
+/* ============ ZONES / HISTORY / STEPS ============ */
+.zrow{background:var(--elev);border-radius:10px;padding:13px 15px;margin-bottom:9px;
+  animation:slideIn .4s var(--e)}
+.zrow .a{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+.zrow .t{font-size:14px;font-weight:800;color:var(--red);letter-spacing:-.01em}
+.zrow .km{font-family:'IBM Plex Mono',monospace;font-size:13.5px;color:var(--amber);
+  font-weight:600}
+.zrow .c{font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--sub);
+  margin-top:6px}
+.zrow .w{font-size:11.5px;color:var(--dim);margin-top:4px}
+.hist{background:var(--elev);border-radius:10px;padding:13px 15px;margin-bottom:9px;
+  display:flex;gap:12px;align-items:flex-start}
+.hist .hi{width:32px;height:32px;border-radius:8px;flex:none;display:flex;
+  align-items:center;justify-content:center;background:rgba(240,58,71,.16)}
+.hist.sos .hi{background:rgba(255,197,49,.16)}
+.hist .hi svg{width:16px;height:16px;stroke:var(--red);fill:none;stroke-width:2.3;
+  stroke-linecap:round;stroke-linejoin:round}
+.hist.sos .hi svg{stroke:var(--amber)}
+.hist .hb{min-width:0;flex:1}
+.hist .t{font-size:14px;font-weight:800;letter-spacing:-.01em}
+.hist .c{font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--sub);
+  margin-top:4px}
+.hist .w{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--dim);
+  margin-top:5px}
+.hist a{color:var(--green);text-decoration:none;font-weight:700}
+.stp{display:flex;gap:13px;padding:11px 0;border-bottom:1px solid rgba(255,255,255,.05);
+  font-size:13.5px;line-height:1.5}
+.stp:last-child{border-bottom:none}
+.stp .n{font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--green);
+  flex:none;width:56px;font-weight:600}
+.stp .d{color:var(--sub)}
+.foldbtn{background:none;border:none;color:var(--green);font-size:13px;font-weight:700;
+  cursor:pointer;padding:9px 0;font-family:'Figtree',sans-serif}
+.fold{display:none} .fold.open{display:block}
+
+select.sel{width:100%;background:var(--card);border:1px solid transparent;border-radius:8px;
+  color:var(--ink);padding:14px 13px;font-size:15px;font-family:'Figtree',sans-serif;
+  outline:none;-webkit-appearance:none;appearance:none;
+  background-image:linear-gradient(45deg,transparent 50%,#B3B3B3 50%),
+                   linear-gradient(135deg,#B3B3B3 50%,transparent 50%);
+  background-position:calc(100% - 19px) 22px,calc(100% - 14px) 22px;
+  background-size:5px 5px,5px 5px;background-repeat:no-repeat}
+.setdesc{font-size:13px;line-height:1.55;color:var(--sub);margin:0 0 11px}
+
+.howstep{display:flex;gap:14px;padding:13px 0;border-bottom:1px solid rgba(255,255,255,.05)}
+.howstep:last-child{border-bottom:none}
+.howstep .num{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--green);
+  flex:none;width:24px;font-weight:600;padding-top:2px}
+.howstep .tx{font-size:13.5px;line-height:1.6;color:var(--sub)}
+.howstep .tx b{color:var(--ink);font-weight:700}
+
+#toast{position:fixed;left:0;right:0;bottom:calc(var(--tabh) + env(safe-area-inset-bottom,0px) + 12px);
+  z-index:80;pointer-events:none;max-width:660px;margin:0 auto;padding:0 18px}
+.tst{background:var(--card2);border-radius:9px;padding:14px 16px;font-size:13px;
+  line-height:1.5;margin-top:9px;animation:slideIn .4s var(--e);
+  box-shadow:0 16px 40px rgba(0,0,0,.65);border-left:3px solid var(--amber)}
+.tst b{font-size:13px;font-weight:800;color:var(--amber);display:block;margin-bottom:3px}
+.tst.red{border-left-color:var(--red)} .tst.red b{color:var(--red)}
+.tst.ok{border-left-color:var(--green)} .tst.ok b{color:var(--green)}
+
+footer{margin:26px 18px 0;padding-top:16px;border-top:1px solid var(--line);
+  font-size:12px;line-height:1.7;color:var(--dim)}
+footer b{color:var(--sub);font-weight:700}
+
+@media (min-width:900px){
+  :root{--tabh:0px}
+  .shell{max-width:1160px;padding:80px 0 60px;
+    background:linear-gradient(180deg,#1E1E1E 0%,var(--bg) 320px)}
+  .tabbar{top:0;bottom:auto;height:74px;padding-bottom:0;max-width:none;width:100%;
+    background:rgba(0,0,0,.9);justify-content:center;gap:6px;padding:0 30px}
+  .tab{flex:0 0 auto;flex-direction:row;gap:10px;padding:0 22px;height:74px;
+    align-items:center}
+  .tab svg{width:19px;height:19px}
+  .tab span{font-size:13.5px}
+  .tab .pip{top:22px;right:12px}
+  .topbar{padding:22px 30px 14px}
+  .hero{padding:8px 30px 22px}
+  .tiles{padding:0 30px;grid-template-columns:repeat(4,1fr)}
+  .sec,.acts,.mapwrap,.mapstyle,.chips,.sumry,.navbox{padding-left:30px;padding-right:30px}
+  .sumry,.navbox{margin-left:30px;margin-right:30px;padding-left:20px;padding-right:20px}
+  footer{margin-left:30px;margin-right:30px}
+  .statuscard h1{font-size:52px}
+  #map{height:60vh;min-height:420px}
+  #toast{bottom:24px;right:0;left:auto;max-width:430px;padding:0 30px;margin:0}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<!-- ================= SPLASH ================= -->
+<div id="splash">
+  <div class="logoWrap">
+    <img src="logo.png" alt="We Care We Alert"
+         onerror="this.style.display='none';document.getElementById('fbLogo').style.display='block'">
+    <svg id="fbLogo" style="display:none" viewBox="0 0 620 250" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="118" cy="125" r="104" fill="#0A0A0A" stroke="#2A2A2A" stroke-width="3"/>
+      <ellipse cx="118" cy="186" rx="58" ry="15" fill="none" stroke="#8BC63F" stroke-width="7"/>
+      <path d="M118 52c-30 0-54 24-54 54 0 38 54 88 54 88s54-50 54-88c0-30-24-54-54-54z" fill="#1B62C4"/>
+      <circle cx="118" cy="104" r="24" fill="#0A0A0A"/>
+      <text x="252" y="112" font-family="Figtree,Arial" font-size="60" font-weight="900" fill="#F4F4F4">WE CARE,</text>
+      <text x="252" y="182" font-family="Figtree,Arial" font-size="60" font-weight="900" fill="#1B62C4">WE ALERT.</text>
+    </svg>
+  </div>
+  <div class="tag">Road Safety Network</div>
+  <div class="bar"><i></i></div>
+</div>
+
+<!-- ================= LOGIN ================= -->
+<div id="login">
+  <div class="lwrap">
+    <div class="lmark">
+      <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="60" cy="60" r="56" fill="#0F0F0F" stroke="#2A2A2A" stroke-width="2"/>
+        <ellipse cx="60" cy="90" rx="29" ry="8" fill="none" stroke="#8BC63F" stroke-width="4"/>
+        <path d="M60 24c-16 0-29 13-29 29 0 20 29 46 29 46s29-26 29-46c0-16-13-29-29-29z" fill="#1B62C4"/>
+        <circle cx="60" cy="52" r="12" fill="#0F0F0F"/>
+      </svg>
+    </div>
+    <h1>Join the safety network</h1>
+    <p class="p">Enter your name so the group knows who is responding when an
+    accident is reported.</p>
+
+    <div class="lerr" id="lErr"></div>
+
+    <div class="lfield">
+      <label for="lName">Your name</label>
+      <input id="lName" type="text" placeholder="e.g. Krishna" autocomplete="name"
+             enterkeyhint="next" maxlength="22">
+    </div>
+
+    <div class="lfield">
+      <label for="lPass">Group password</label>
+      <input id="lPass" type="password" placeholder="Shared with your group"
+             autocomplete="current-password" enterkeyhint="go">
+    </div>
+
+    <button class="lbtn" id="lGo">Continue</button>
+
+    <p class="lnote">Your name and position are shared only with people who have
+    this app and the group password. Nothing is shared publicly.</p>
+  </div>
+</div>
+
+<!-- ================= APP ================= -->
+<div id="app">
+<div class="shell">
+
+<div class="topbar" id="topbar">
+  <div class="brand">
+    <svg class="bmk" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="60" cy="60" r="56" fill="#0F0F0F" stroke="#2A2A2A" stroke-width="3"/>
+      <ellipse cx="60" cy="90" rx="29" ry="8" fill="none" stroke="#8BC63F" stroke-width="5"/>
+      <path d="M60 24c-16 0-29 13-29 29 0 20 29 46 29 46s29-26 29-46c0-16-13-29-29-29z" fill="#1B62C4"/>
+      <circle cx="60" cy="52" r="12" fill="#0F0F0F"/>
+    </svg>
+    <div><div class="bt">We Care, We Alert</div>
+      <span class="bs" id="plate">TN 56 CC 2343</span></div>
+  </div>
+  <div class="avatar" id="avatar" title="Sign out">K</div>
+</div>
+
+<!-- ---------- HOME ---------- -->
+<section class="page active" id="page-home">
+  <div class="hero">
+    <div class="greet" id="greet">Good evening</div>
+    <div class="statuscard">
+      <div class="row1">
+        <div style="min-width:0">
+          <div class="pill"><span class="d"></span><span id="eyebrow">Standing by</span></div>
+          <h1 id="headline">Road clear</h1>
+          <p class="sub" id="subline">Start monitoring to be warned when you
+          approach a recent accident site.</p>
+        </div>
+        <div class="ring">
+          <svg width="86" height="86" viewBox="0 0 96 96" aria-hidden="true">
+            <circle class="t" cx="48" cy="48" r="42"></circle>
+            <circle class="a" id="arc" cx="48" cy="48" r="42"
+                    stroke-dasharray="263.9" stroke-dashoffset="263.9"></circle>
+          </svg>
+          <div class="lb"><span class="n" id="bigdist">--</span><span class="u">metres</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tiles">
+    <div class="tile"><div class="ic" style="background:#F03A47">
+      <svg viewBox="0 0 24 24"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg></div>
+      <div class="tx"><div class="k">Zones</div><div class="v" id="s-zones">0</div></div></div>
+    <div class="tile"><div class="ic" style="background:#FFC531">
+      <svg viewBox="0 0 24 24"><path d="M12 21s-7-6.4-7-11a7 7 0 1 1 14 0c0 4.6-7 11-7 11z"/><circle cx="12" cy="10" r="2.6"/></svg></div>
+      <div class="tx"><div class="k">Nearest</div><div class="v" id="s-near">--</div></div></div>
+    <div class="tile"><div class="ic" style="background:#1DB954">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3v18M3 12h18"/></svg></div>
+      <div class="tx"><div class="k">Vehicle</div><div class="v sm" id="s-gps">Waiting</div></div></div>
+    <div class="tile"><div class="ic" style="background:#A855F7">
+      <svg viewBox="0 0 24 24"><path d="M17 17H7l-1.5 3h13L17 17z"/><circle cx="12" cy="9" r="6"/></svg></div>
+      <div class="tx"><div class="k">Riders</div><div class="v" id="s-users">1</div></div></div>
+  </div>
+
+  <div class="acts">
+    <button class="btn b-green" id="enable">Start monitoring</button>
+    <button class="btn b-out" id="sim">Simulate entering zone</button>
+  </div>
+
+  <div class="sec">
+    <h2>Latest activity</h2>
+    <div id="homefeed"><p class="empty">Nothing reported yet. Roads are clear.</p></div>
+  </div>
+
+  <footer>
+    <b>How this works.</b> When the bike detects a crash, that spot is marked as an
+    accident zone. Plan a journey on Navigate and any zone on your road is flagged
+    before you leave, with a spoken warning as you approach.
+  </footer>
+</section>
+<!-- ---------- NAVIGATE ---------- -->
+<section class="page" id="page-nav">
+  <div class="sec">
+    <h2>Plan a journey</h2>
+    <div class="field">
+      <span class="pin a"></span>
+      <input id="fromIn" type="text" placeholder="Starting point" autocomplete="off"
+             enterkeyhint="search">
+      <button class="mini" id="useLoc">Locate me</button>
+    </div>
+    <div id="fromSug" class="sug" style="display:none"></div>
+
+    <div class="swap"><button id="swapBtn" title="Swap">
+      <svg viewBox="0 0 24 24"><path d="M7 4v16M7 20l-3.5-3.5M7 20l3.5-3.5"/>
+      <path d="M17 20V4M17 4l-3.5 3.5M17 4l3.5 3.5"/></svg></button></div>
+
+    <div class="field">
+      <span class="pin b"></span>
+      <input id="toIn" type="text" placeholder="Destination" autocomplete="off"
+             enterkeyhint="go">
+      <button class="mini" id="pickTo">On map</button>
+    </div>
+    <div id="toSug" class="sug" style="display:none"></div>
+    <p class="hint" id="tipHint">Type a place and press Enter, or tap On map and
+    touch any point.</p>
+  </div>
+
+  <div class="sumry" id="sumBox">
+    <div class="srow">
+      <div class="sit"><div class="k">Distance</div><div class="v" id="sumDist">--</div></div>
+      <div class="sit"><div class="k">Time</div><div class="v" id="sumTime">--</div></div>
+      <div class="sit"><div class="k">Zones</div><div class="v" id="sumZones">0</div></div>
+    </div>
+    <div class="snote" id="sumNote">Route calculated.</div>
+  </div>
+
+  <div class="chips" id="routeChips" style="display:none"></div>
+
+  <div class="navbox" id="navBox">
+    <div class="lab" id="navLab">Navigation active</div>
+    <div class="big g" id="navBig">Road clear</div>
+    <div class="det" id="navDet">No accident zones ahead on this route.</div>
+    <div class="mono" id="navMono"></div>
+  </div>
+
+  <div class="acts">
+    <button class="btn b-green" id="routeBtn">Get route</button>
+    <button class="btn b-white" id="startNav" style="display:none">Start navigation</button>
+    <button class="btn b-red" id="stopNav" style="display:none">Stop navigation</button>
+    <a class="btn b-out" id="gmapBtn" href="#" target="_blank" style="display:none">Open in Google Maps</a>
+  </div>
+
+  <div class="mapstyle">
+    <button class="msbtn on" data-style="streets">Streets</button>
+    <button class="msbtn" data-style="classic">Classic</button>
+    <button class="msbtn" data-style="satellite">Satellite</button>
+    <button class="msbtn" data-style="dark">Dark</button>
+  </div>
+
+  <div class="mapwrap"><div id="map"></div></div>
+
+  <div class="sec">
+    <h2>Riders online <span class="badge" id="uCount">1</span></h2>
+    <div id="userList"><p class="empty">Only you right now.</p></div>
+  </div>
+
+  <div class="sec">
+    <h2>Accident zones on route <span class="badge" id="rzCount">0</span></h2>
+    <div id="routeZones"><p class="empty">Plan a route to see which accident zones
+    lie along it.</p></div>
+  </div>
+
+  <div class="sec">
+    <h2>Directions</h2>
+    <button class="foldbtn" id="stepsToggle" style="display:none">Show all directions</button>
+    <div id="stepList" class="fold"></div>
+    <p class="empty" id="stepsEmpty">Directions appear once a route is calculated.</p>
+  </div>
+</section>
+
+<!-- ---------- ALERTS ---------- -->
+<section class="page" id="page-alerts">
+  <div class="sec">
+    <h2>Emergency alerts <span class="badge" id="acount">0</span></h2>
+    <div id="alertlist"><p class="empty">No alerts yet. Messages sent to the family
+    group appear here.</p></div>
+  </div>
+  <footer>
+    <b>Responding.</b> When an alert arrives, tap <b>I proceed</b> so everyone knows
+    somebody is on the way. Your name appears on every phone in the group.
+  </footer>
+</section>
+
+<!-- ---------- HISTORY ---------- -->
+<section class="page" id="page-history">
+  <div class="sec">
+    <h2>Incident record <span class="badge" id="hcount">0</span></h2>
+    <div class="tiles" style="padding:0 0 14px">
+      <div class="tile"><div class="ic" style="background:#F03A47">
+        <svg viewBox="0 0 24 24"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg></div>
+        <div class="tx"><div class="k">Total</div><div class="v" id="h-total">0</div></div></div>
+      <div class="tile"><div class="ic" style="background:#FFC531">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7.5V12l3 2"/></svg></div>
+        <div class="tx"><div class="k">7 days</div><div class="v" id="h-week">0</div></div></div>
+    </div>
+    <div class="mapwrap" style="padding:0"><div id="hmap"></div></div>
+  </div>
+  <div class="sec">
+    <h2>All recorded incidents</h2>
+    <div id="histlist"><p class="empty">No incidents recorded yet.</p></div>
+  </div>
+  <footer>
+    <b>Permanent record.</b> Every incident is kept here even after its warning zone
+    expires. Repeated markers in one area identify a genuinely dangerous stretch of road.
+  </footer>
+</section>
+
+<!-- ---------- SETUP ---------- -->
+<section class="page" id="page-settings">
+  <div class="sec">
+    <h2>Warning zone duration</h2>
+    <p class="setdesc">How long a location stays marked as accident prone after a
+    crash. Applies to new incidents only.</p>
+    <select id="setLife" class="sel">
+      <option value="120">2 minutes</option>
+      <option value="300" selected>5 minutes</option>
+      <option value="900">15 minutes</option>
+      <option value="1800">30 minutes</option>
+      <option value="3600">1 hour</option>
+      <option value="21600">6 hours</option>
+      <option value="43200">12 hours</option>
+      <option value="86400">1 day</option>
+      <option value="259200">3 days</option>
+      <option value="604800">7 days</option>
+      <option value="1296000">15 days</option>
+    </select>
+  </div>
+
+  <div class="sec">
+    <h2>Warning radius</h2>
+    <p class="setdesc">How close a rider must be before the alarm sounds.</p>
+    <select id="setRad" class="sel">
+      <option value="10">10 metres</option>
+      <option value="20" selected>20 metres</option>
+      <option value="50">50 metres</option>
+      <option value="100">100 metres</option>
+      <option value="200">200 metres</option>
+      <option value="500">500 metres</option>
+    </select>
+  </div>
+
+  <div class="acts"><button class="btn b-green" id="saveCfg">Save settings</button></div>
+
+  <div class="sec">
+    <h2>Your profile</h2>
+    <div class="list">
+      <div class="li"><span class="k">Name</span><span class="v" id="pName">--</span></div>
+      <div class="li"><span class="k">Your colour</span><span class="v" id="pColor">--</span></div>
+      <div class="li"><span class="k">Sharing location</span><span class="v" id="pShare">On</span></div>
+    </div>
+    <div class="acts" style="padding:14px 0 0">
+      <button class="btn b-out" id="signOut">Sign out</button>
+    </div>
+  </div>
+
+  <div class="sec">
+    <h2>Monitored vehicle</h2>
+    <div class="list">
+      <div class="li"><span class="k">Rider</span><span class="v" id="vrider">--</span></div>
+      <div class="li"><span class="k">Vehicle</span><span class="v" id="vplate">--</span></div>
+      <div class="li"><span class="k">Last position</span><span class="v" id="vpos">--</span></div>
+      <div class="li"><span class="k">Satellites</span><span class="v" id="vsat">--</span></div>
+      <div class="li"><span class="k">Last update</span><span class="v" id="vage">--</span></div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <h2>System status</h2>
+    <div class="list">
+      <div class="li"><span class="k">Database</span><span class="v" id="d-db">Checking</span></div>
+      <div class="li"><span class="k">Alarm sound</span><span class="v" id="d-snd">Not enabled</span></div>
+      <div class="li"><span class="k">Notifications</span><span class="v" id="d-not">Not enabled</span></div>
+      <div class="li"><span class="k">Active radius</span><span class="v" id="d-rad">20 m</span></div>
+      <div class="li"><span class="k">Active duration</span><span class="v" id="d-life">5 min</span></div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <h2>How the system works</h2>
+    <div class="howstep"><div class="num">01</div><div class="tx">
+      <b>Detection.</b> An accelerometer measures impact force and lean angle, and a
+      vibration sensor detects shock.</div></div>
+    <div class="howstep"><div class="num">02</div><div class="tx">
+      <b>Confirmation.</b> A buzzer sounds for 20 seconds. If the rider is conscious
+      they press the button and the alert is cancelled.</div></div>
+    <div class="howstep"><div class="num">03</div><div class="tx">
+      <b>Alert.</b> With no response, the location and time go to the family group
+      with ride booking links.</div></div>
+    <div class="howstep"><div class="num">04</div><div class="tx">
+      <b>Response.</b> Anyone can tap <b>I proceed</b> so the group knows who is
+      going, instead of everyone waiting for someone else.</div></div>
+    <div class="howstep"><div class="num">05</div><div class="tx">
+      <b>Zone.</b> That spot becomes an accident zone. Riders approaching it are
+      warned by voice at 1 km, 500 m and 200 m.</div></div>
+  </div>
+
+  <footer>
+    <b>Sound and voice.</b> Tap Start monitoring on Home once. Phones block audio
+    until you do. Routing uses OSRM and place search uses OpenStreetMap. No paid
+    service is used anywhere in this app.
+  </footer>
+</section>
+
+</div>
+</div>
+
+<div id="toast"></div>
+
+<nav class="tabbar" id="tabbar">
+  <button class="tab on" data-page="home">
+    <svg viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20h14V9.5"/><path d="M9.5 20v-6h5v6"/></svg>
+    <span>Home</span></button>
+  <button class="tab" data-page="nav">
+    <svg viewBox="0 0 24 24"><path d="M12 2 4.5 21 12 17.5 19.5 21 12 2z"/></svg>
+    <span>Navigate</span></button>
+  <button class="tab" data-page="alerts">
+    <span class="pip" id="alertpip"></span>
+    <svg viewBox="0 0 24 24"><path d="M18 8.5a6 6 0 1 0-12 0c0 6-2.5 7.5-2.5 7.5h17S18 14.5 18 8.5"/><path d="M13.7 20a2 2 0 0 1-3.4 0"/></svg>
+    <span>Alerts</span></button>
+  <button class="tab" data-page="history">
+    <svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 7.5V12l3 2"/></svg>
+    <span>History</span></button>
+  <button class="tab" data-page="settings">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9 7 7M17 17l2.1 2.1M19.1 4.9 17 7M7 17l-2.1 2.1"/></svg>
+    <span>Setup</span></button>
+</nav>
+<script>
+/* ==================================================================
+   CONFIGURATION
+   ================================================================== */
+var FIREBASE_URL = "https://bike-safety-24bd6-default-rtdb.asia-southeast1.firebasedatabase.app";
+var GROUP_PASSWORD = "bike2026";     /* <-- change this and tell your group */
+
+var OSRM = "https://router.project-osrm.org/route/v1/driving/";
+var NOMI = "https://nominatim.openstreetmap.org/search?format=json&limit=8&q=";
+
+/* ================= IDENTITY ================= */
+var USER_COLORS = ['#1DB954','#3B82F6','#A855F7','#FF6B35','#22D3EE','#EC4899',
+                   '#FFC531','#14B8A6','#F97316','#8B5CF6','#06B6D4','#84CC16'];
+var me = null;    /* {uid, name, color} */
+
+function loadMe(){
+  try{
+    var raw=localStorage.getItem('wcwa_user');
+    if(raw) return JSON.parse(raw);
+  }catch(e){}
+  return null;
+}
+function saveMe(u){ try{ localStorage.setItem('wcwa_user',JSON.stringify(u)); }catch(e){} }
+function makeUid(){
+  return 'u'+Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+}
+function colorFor(uid){
+  var h=0;
+  for(var i=0;i<uid.length;i++) h=(h*31+uid.charCodeAt(i))>>>0;
+  return USER_COLORS[h%USER_COLORS.length];
+}
+function initials(n){
+  var p=(n||'?').trim().split(/\s+/);
+  return ((p[0]||'?').charAt(0)+(p[1]?p[1].charAt(0):'')).toUpperCase();
+}
+
+/* ================= SPLASH -> LOGIN -> APP ================= */
+setTimeout(function(){
+  document.getElementById('splash').classList.add('gone');
+  me=loadMe();
+  if(me && me.name) enterApp();
+  else document.getElementById('login').classList.add('show');
+},3000);
+
+function showLoginError(msg){
+  var e=document.getElementById('lErr');
+  e.textContent=msg; e.classList.remove('show');
+  void e.offsetWidth; e.classList.add('show');
+}
+
+document.getElementById('lGo').onclick=function(){
+  var n=document.getElementById('lName').value.trim();
+  var p=document.getElementById('lPass').value;
+  if(n.length<2){ showLoginError('Please enter your name.'); return; }
+  if(p!==GROUP_PASSWORD){ showLoginError('That password is not correct. Ask your group.'); return; }
+  var uid=makeUid();
+  me={uid:uid,name:n,color:colorFor(uid)};
+  saveMe(me);
+  document.getElementById('login').classList.remove('show');
+  enterApp();
+};
+document.getElementById('lPass').addEventListener('keydown',function(e){
+  if(e.key==='Enter') document.getElementById('lGo').click();
+});
+document.getElementById('lName').addEventListener('keydown',function(e){
+  if(e.key==='Enter') document.getElementById('lPass').focus();
+});
+
+function enterApp(){
+  document.getElementById('login').classList.remove('show');
+  document.getElementById('app').classList.add('show');
+
+  var av=document.getElementById('avatar');
+  av.textContent=initials(me.name);
+  av.style.background=me.color;
+  document.getElementById('pName').textContent=me.name;
+  document.getElementById('pColor').innerHTML=
+    '<span style="display:inline-block;width:11px;height:11px;border-radius:50%;'+
+    'background:'+me.color+';margin-right:7px;vertical-align:-1px"></span>'+me.color;
+
+  var h=new Date().getHours();
+  document.getElementById('greet').textContent=
+    (h<12?'Good morning, ':h<17?'Good afternoon, ':'Good evening, ')+me.name;
+
+  setTimeout(function(){ if(map) map.invalidateSize(); },200);
+  startPresence();
+  refresh();
+  setInterval(refresh,4000);
+}
+
+function signOutNow(){
+  if(me) fetch(FIREBASE_URL+'/users/'+me.uid+'.json',{method:'DELETE'}).catch(function(){});
+  try{ localStorage.removeItem('wcwa_user'); }catch(e){}
+  location.reload();
+}
+document.getElementById('avatar').onclick=signOutNow;
+document.getElementById('signOut').onclick=signOutNow;
+
+/* ================= STATE ================= */
+var map, meMarker, vehMarker, layers=[], routeLine=null, routeGlow=null;
+var fromPin=null, toPin=null, routeZoneMarks=[], userMarks={};
+var zones=[], myLat=null, myLng=null;
+var audioCtx=null, alarmOn=false, alarmTimer=null;
+var inZone=false, simulate=false;
+var seenZones={}, seenAlerts={}, firstAlertLoad=true;
+var wakeLock=null, shownDist=0, titleFlip=null, swReg=null;
+var currentPage='home', histCache=[], cfgLoaded=false, navAutoLoc=false;
+var otherUsers=[], responders={}, myResponses={};
+var RING=263.9;
+var fromPt=null, toPt=null;
+var routeCoords=[], routeCum=[], routeSteps=[];
+var routeZones=[], navActive=false, navWatch=null, announced={};
+var allRoutes=[], activeRoute=0, altLines=[];
+var ROUTE_CORRIDOR=350;
+var myHomeLat=null, myHomeLng=null, RECENT_KEY='wcwa_recent';
+var hmap=null, hlayers=[], hBaseLayer=null;
+
+/* ================= PAGES ================= */
+function showPage(name){
+  var ps=document.querySelectorAll('.page');
+  for(var i=0;i<ps.length;i++) ps[i].classList.remove('active');
+  var t=document.getElementById('page-'+name);
+  if(t) t.classList.add('active');
+  var tb=document.querySelectorAll('.tab');
+  for(var j=0;j<tb.length;j++){
+    if(tb[j].getAttribute('data-page')===name) tb[j].classList.add('on');
+    else tb[j].classList.remove('on');
+  }
+  currentPage=name; window.scrollTo(0,0);
+  if(name==='nav' && map){
+    setTimeout(function(){ map.invalidateSize(); },130);
+    if(!navAutoLoc){
+      navAutoLoc=true;
+      if(navigator.geolocation && !fromPt){
+        navigator.geolocation.getCurrentPosition(function(p){
+          if(fromPt) return;
+          fromPt={lat:p.coords.latitude,lng:p.coords.longitude,name:'My location'};
+          document.getElementById('fromIn').value='My location';
+          drawEnds();
+          reverseName(p.coords.latitude,p.coords.longitude).then(function(n){
+            if(fromPt && fromPt.name==='My location'){
+              fromPt.name=n; document.getElementById('fromIn').value=n;
+            }
+          });
+        },function(){},{enableHighAccuracy:false,timeout:9000,maximumAge:60000});
+      }
+    }
+  }
+  if(name==='history'){
+    initHistoryMap();
+    setTimeout(function(){ if(hmap) hmap.invalidateSize(); renderHistory(histCache); },140);
+  }
+  if(name==='alerts') document.getElementById('alertpip').classList.remove('show');
+}
+var tabBtns=document.querySelectorAll('.tab');
+for(var t=0;t<tabBtns.length;t++){
+  tabBtns[t].addEventListener('click',function(){ showPage(this.getAttribute('data-page')); });
+}
+window.addEventListener('scroll',function(){
+  var tb=document.getElementById('topbar');
+  if(window.scrollY>12) tb.classList.add('stuck'); else tb.classList.remove('stuck');
+});
+
+/* ================= MAP ================= */
+map=L.map('map',{zoomControl:false}).setView([9.9252,78.1198],13);
+L.control.zoom({position:'bottomright'}).addTo(map);
+
+var MAP_STYLES={
+  streets:{url:'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+    attr:'&copy; OpenStreetMap, &copy; CARTO',max:19,light:true},
+  classic:{url:'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+    attr:'&copy; OpenStreetMap contributors',max:19,light:true},
+  satellite:{url:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    attr:'Imagery &copy; Esri',max:18,light:false},
+  dark:{url:'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+    attr:'&copy; OpenStreetMap, &copy; CARTO',max:19,light:false}
+};
+var PALETTE={
+  light:{route:'#1A73E8',casing:'#FFFFFF',alt:'#80868B',zone:'#D93025',zoneFill:.26,
+         start:'#1DB954',end:'#D93025',veh:'#F9AB00'},
+  dark:{route:'#1DB954',casing:'#0A0A0A',alt:'#6A6A6A',zone:'#F03A47',zoneFill:.20,
+        start:'#1DB954',end:'#F03A47',veh:'#FFC531'}
+};
+var mapStyle='streets', baseLayer=null;
+function pal(){ return MAP_STYLES[mapStyle].light ? PALETTE.light : PALETTE.dark; }
+
+function applyMapStyle(name,firstRun){
+  if(!MAP_STYLES[name]) name='streets';
+  mapStyle=name;
+  var cfg=MAP_STYLES[name];
+  if(baseLayer) map.removeLayer(baseLayer);
+  baseLayer=L.tileLayer(cfg.url,{maxZoom:cfg.max,attribution:cfg.attr}).addTo(map);
+  if(baseLayer.setZIndex) baseLayer.setZIndex(0);
+  var c=map.getContainer();
+  if(cfg.light) c.classList.add('light'); else c.classList.remove('light');
+  if(hmap){
+    if(hBaseLayer) hmap.removeLayer(hBaseLayer);
+    hBaseLayer=L.tileLayer(cfg.url,{maxZoom:cfg.max,attribution:cfg.attr}).addTo(hmap);
+    var hc=hmap.getContainer();
+    if(cfg.light) hc.classList.add('light'); else hc.classList.remove('light');
+  }
+  var btns=document.querySelectorAll('.msbtn');
+  for(var i=0;i<btns.length;i++){
+    if(btns[i].getAttribute('data-style')===name) btns[i].classList.add('on');
+    else btns[i].classList.remove('on');
+  }
+  try{ localStorage.setItem('wcwa_mapstyle',name); }catch(e){}
+  if(!firstRun) redrawOverlays();
+}
+function redrawOverlays(){
+  drawEnds();
+  if(allRoutes.length) selectRoute(activeRoute);
+  refreshZoneCircles();
+  drawUsers();
+  if(hmap) renderHistory(histCache);
+  if(meMarker){ map.removeLayer(meMarker); meMarker=null; }
+  check();
+}
+var savedStyle='streets';
+try{ savedStyle=localStorage.getItem('wcwa_mapstyle')||'streets'; }catch(e){}
+applyMapStyle(savedStyle,true);
+var msBtns=document.querySelectorAll('.msbtn');
+for(var q=0;q<msBtns.length;q++){
+  msBtns[q].addEventListener('click',function(){
+    applyMapStyle(this.getAttribute('data-style'),false);
+  });
+}
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('sw.js').then(function(r){swReg=r;}).catch(function(){});
+}
+/* ================= HELPERS ================= */
+function dist(a1,o1,a2,o2){
+  var R=6371000,dA=(a2-a1)*Math.PI/180,dO=(o2-o1)*Math.PI/180;
+  var x=Math.sin(dA/2)*Math.sin(dA/2)+Math.cos(a1*Math.PI/180)*
+        Math.cos(a2*Math.PI/180)*Math.sin(dO/2)*Math.sin(dO/2);
+  return R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x));
+}
+function nearestOnRoute(lat,lng){
+  var best=Infinity,bi=0;
+  for(var i=0;i<routeCoords.length;i++){
+    var d=dist(lat,lng,routeCoords[i][0],routeCoords[i][1]);
+    if(d<best){best=d;bi=i;}
+  }
+  return {d:best,idx:bi};
+}
+function fmtKm(m){
+  if(m<1000) return Math.round(m)+' m';
+  return (m/1000).toFixed(m<10000?1:0)+' km';
+}
+function fmtMin(s){
+  var h=Math.floor(s/3600), m=Math.round((s%3600)/60);
+  return h>0 ? h+' h '+m+' min' : m+' min';
+}
+function ago(sec){
+  if(sec<0) sec=0;
+  if(sec<60) return sec+'s ago';
+  if(sec<3600) return Math.floor(sec/60)+'m ago';
+  return Math.floor(sec/3600)+'h ago';
+}
+function clock12(d){
+  var h=d.getHours(), m=d.getMinutes(), ap=h>=12?'PM':'AM';
+  h=h%12; if(h===0) h=12;
+  return h+':'+(m<10?'0':'')+m+' '+ap;
+}
+function esc(t){
+  return String(t||'').replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+/* ================= SOUND + VOICE ================= */
+function tone(f1,f2,dur,vol){
+  if(!audioCtx) return;
+  try{
+    var o=audioCtx.createOscillator(), g=audioCtx.createGain();
+    o.type='square';
+    o.frequency.setValueAtTime(f1,audioCtx.currentTime);
+    o.frequency.setValueAtTime(f2,audioCtx.currentTime+dur*0.5);
+    g.gain.setValueAtTime(vol,audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+dur);
+    o.connect(g); g.connect(audioCtx.destination);
+    o.start(); o.stop(audioCtx.currentTime+dur+0.02);
+  }catch(e){}
+}
+function speak(text){
+  try{
+    if(!window.speechSynthesis) return;
+    var u=new SpeechSynthesisUtterance(text);
+    u.rate=1.0;
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(u);
+  }catch(e){}
+}
+function warnVoice(){ speak('Accident zone ahead. Please go slow.'); }
+function alarmStep(d){
+  tone(940,700,0.3,0.32);
+  if(navigator.vibrate) navigator.vibrate([250,110,250]);
+  var gap=d<6?620:d<12?900:1300;
+  alarmTimer=setTimeout(function(){ if(alarmOn) alarmStep(shownDist); },gap);
+}
+function startAlarm(d){
+  if(alarmOn) return;
+  alarmOn=true; alarmStep(d);
+  titleFlip=setInterval(function(){
+    document.title=document.title.charAt(0)==='!'?'We Care, We Alert':'! DANGER ZONE !';
+  },900);
+}
+function stopAlarm(){
+  alarmOn=false;
+  if(alarmTimer){clearTimeout(alarmTimer);alarmTimer=null;}
+  if(titleFlip){clearInterval(titleFlip);titleFlip=null;}
+  document.title='We Care, We Alert';
+  try{ if(window.speechSynthesis) window.speechSynthesis.cancel(); }catch(e){}
+}
+function askNotify(){
+  try{
+    if(!('Notification' in window)) return;
+    var el=document.getElementById('d-not');
+    if(Notification.permission==='default'){
+      Notification.requestPermission().then(function(p){
+        el.textContent=(p==='granted')?'Enabled':'Blocked'; });
+    } else el.textContent=(Notification.permission==='granted')?'Enabled':'Blocked';
+  }catch(e){}
+}
+function notify(title,body,urgent){
+  try{
+    if(!('Notification' in window)) return;
+    if(Notification.permission!=='granted') return;
+    var o={body:body,icon:'icon.svg',badge:'icon.svg',
+      vibrate:urgent?[300,120,300,120,300]:[200,100,200],
+      tag:'wcwa-'+Date.now(),requireInteraction:!!urgent};
+    if(swReg && swReg.showNotification) swReg.showNotification(title,o);
+    else new Notification(title,o);
+  }catch(e){}
+}
+function toast(title,msg,kind){
+  var box=document.getElementById('toast');
+  var d=document.createElement('div');
+  d.className='tst'+(kind?(' '+kind):'');
+  d.innerHTML='<b>'+esc(title)+'</b>'+esc(msg);
+  box.appendChild(d);
+  setTimeout(function(){
+    d.style.transition='opacity .4s,transform .4s';
+    d.style.opacity='0'; d.style.transform='translateY(8px)';
+    setTimeout(function(){ if(d.parentNode) d.parentNode.removeChild(d); },420);
+  },5200);
+}
+function keepAwake(){
+  try{
+    if('wakeLock' in navigator){
+      navigator.wakeLock.request('screen').then(function(w){wakeLock=w;}).catch(function(){});
+      document.addEventListener('visibilitychange',function(){
+        if(document.visibilityState==='visible' && 'wakeLock' in navigator){
+          navigator.wakeLock.request('screen').then(function(w){wakeLock=w;}).catch(function(){});
+        }
+      });
+    }
+  }catch(e){}
+}
+
+/* ================= LIVE PRESENCE ================= */
+function publishMe(){
+  if(!me || myLat===null) return;
+  var body={name:me.name,color:me.color,lat:myLat,lng:myLng,
+            updatedAt:Math.floor(Date.now()/1000)};
+  fetch(FIREBASE_URL+'/users/'+me.uid+'.json',
+    {method:'PUT',headers:{'Content-Type':'application/json'},
+     body:JSON.stringify(body)}).catch(function(){});
+}
+function startPresence(){
+  if(!navigator.geolocation) return;
+  navigator.geolocation.watchPosition(function(p){
+    if(simulate) return;
+    myLat=p.coords.latitude; myLng=p.coords.longitude;
+    if(myHomeLat===null){ myHomeLat=myLat; myHomeLng=myLng; }
+    check(); if(navActive) navTick();
+  },function(){
+    document.getElementById('pShare').textContent='Blocked';
+  },{enableHighAccuracy:true,maximumAge:4000,timeout:20000});
+  setInterval(publishMe,15000);
+  setTimeout(publishMe,3000);
+}
+window.addEventListener('beforeunload',function(){
+  if(me && navigator.sendBeacon){
+    try{ navigator.sendBeacon(FIREBASE_URL+'/users/'+me.uid+'.json?x-http-method-override=DELETE',''); }catch(e){}
+  }
+});
+
+function userIcon(u){
+  return L.divIcon({className:'',iconSize:[30,30],iconAnchor:[15,15],
+    html:'<div class="usr"><div class="in" style="background:'+u.color+'"></div>'+
+         '<div class="ring2"></div><div class="lbl">'+esc(u.name)+'</div></div>'});
+}
+function drawUsers(){
+  var now=Math.floor(Date.now()/1000), live={};
+  for(var i=0;i<otherUsers.length;i++){
+    var u=otherUsers[i];
+    if(now-u.updatedAt>180) continue;          /* gone quiet, drop the dot */
+    live[u.uid]=1;
+    if(userMarks[u.uid]){
+      userMarks[u.uid].setLatLng([u.lat,u.lng]);
+      userMarks[u.uid].setIcon(userIcon(u));
+    }else{
+      userMarks[u.uid]=L.marker([u.lat,u.lng],{icon:userIcon(u),zIndexOffset:400})
+        .addTo(map)
+        .bindPopup('<b>'+esc(u.name)+'</b><br>Last seen '+ago(now-u.updatedAt));
+    }
+  }
+  for(var k in userMarks){
+    if(!live[k]){ map.removeLayer(userMarks[k]); delete userMarks[k]; }
+  }
+
+  var box=document.getElementById('userList');
+  var cnt=document.getElementById('uCount');
+  var total=Object.keys(live).length+1;
+  cnt.textContent=total;
+  document.getElementById('s-users').textContent=total;
+
+  var h='<div class="list">';
+  h+='<div class="li"><span class="k"><span style="display:inline-block;width:10px;'+
+     'height:10px;border-radius:50%;background:'+me.color+';margin-right:9px;'+
+     'vertical-align:-1px"></span>'+esc(me.name)+' (you)</span>'+
+     '<span class="v ok">'+(myLat!==null?'live':'no signal')+'</span></div>';
+  for(var i=0;i<otherUsers.length;i++){
+    var u=otherUsers[i];
+    if(!live[u.uid]) continue;
+    h+='<div class="li"><span class="k"><span style="display:inline-block;width:10px;'+
+       'height:10px;border-radius:50%;background:'+u.color+';margin-right:9px;'+
+       'vertical-align:-1px"></span>'+esc(u.name)+'</span>'+
+       '<span class="v">'+ago(now-u.updatedAt)+'</span></div>';
+  }
+  h+='</div>';
+  box.innerHTML=h;
+}
+/* ================= DANGER ZONE MARKER ================= */
+function dangerIcon(){
+  var svg='<svg viewBox="0 0 24 24" class="tri" xmlns="http://www.w3.org/2000/svg">'+
+    '<path d="M10.3 2.6 1.2 18.6A2 2 0 0 0 2.9 21.6h18.2a2 2 0 0 0 1.7-3L13.7 2.6a2 2 0 0 0-3.4 0z" '+
+    'fill="#F03A47" stroke="#FFFFFF" stroke-width="1.4" stroke-linejoin="round"/>'+
+    '<path d="M12 8.4v5.1" stroke="#FFFFFF" stroke-width="2.1" stroke-linecap="round"/>'+
+    '<circle cx="12" cy="17.2" r="1.25" fill="#FFFFFF"/></svg>';
+  return L.divIcon({className:'',iconSize:[42,42],iconAnchor:[21,21],
+    html:'<div class="dzn"><div class="pulse"></div>'+svg+'</div>'});
+}
+function zonePopup(z,extra){
+  var t=z.time?('<br>'+esc(z.time)):'';
+  return '<b>Accident zone</b>'+(extra||'')+t+
+         '<br>Radius '+(z.radius||20)+' m';
+}
+
+/* ================= SEARCH ================= */
+function loadRecent(){
+  try{ return JSON.parse(localStorage.getItem(RECENT_KEY)||'[]'); }catch(e){ return []; }
+}
+function saveRecent(p){
+  try{
+    var r=loadRecent();
+    r=r.filter(function(x){ return x.name!==p.name; });
+    r.unshift({name:p.name,lat:p.lat,lng:p.lng});
+    if(r.length>6) r=r.slice(0,6);
+    localStorage.setItem(RECENT_KEY,JSON.stringify(r));
+  }catch(e){}
+}
+function placeKind(r){
+  var c=r.class||'', t=r.type||'';
+  if(c==='highway') return {t:'Road',cls:'road'};
+  if(c==='amenity'||c==='shop'||c==='tourism'||c==='leisure'||c==='healthcare')
+    return {t:t.replace(/_/g,' '),cls:'poi'};
+  if(c==='place') return {t:t,cls:''};
+  if(c==='boundary') return {t:'district',cls:''};
+  if(c==='railway') return {t:'station',cls:'poi'};
+  if(c==='aeroway') return {t:'airport',cls:'poi'};
+  return {t:(t||'place').replace(/_/g,' '),cls:''};
+}
+function searchPlaces(q){
+  var url=NOMI+encodeURIComponent(q)+'&addressdetails=1';
+  if(myHomeLat!==null){
+    var d=1.6;
+    url+='&viewbox='+(myHomeLng-d)+','+(myHomeLat+d)+','+(myHomeLng+d)+','+(myHomeLat-d);
+  }
+  return fetch(url).then(function(r){return r.json();}).then(function(list){
+    if(!list) return [];
+    var out=[];
+    for(var i=0;i<list.length;i++){
+      var r=list[i], la=parseFloat(r.lat), ln=parseFloat(r.lon);
+      if(isNaN(la)) continue;
+      var away=myHomeLat!==null?dist(myHomeLat,myHomeLng,la,ln):null;
+      out.push({lat:la,lng:ln,full:r.display_name,
+        name:r.display_name.split(',').slice(0,2).join(','),
+        kind:placeKind(r),away:away,imp:parseFloat(r.importance||0)});
+    }
+    out.sort(function(a,b){
+      if(a.away!==null && b.away!==null){
+        var an=a.away<60000?0:a.away<300000?1:2;
+        var bn=b.away<60000?0:b.away<300000?1:2;
+        if(an!==bn) return an-bn;
+      }
+      return b.imp-a.imp;
+    });
+    return out;
+  }).catch(function(){ return []; });
+}
+function geocodeBest(text){
+  return searchPlaces(text).then(function(l){ return l.length?l[0]:null; });
+}
+function reverseName(lat,lng){
+  var u='https://nominatim.openstreetmap.org/reverse?format=json&lat='+lat+'&lon='+lng;
+  return fetch(u).then(function(r){return r.json();})
+    .then(function(d){
+      if(d && d.display_name) return d.display_name.split(',').slice(0,2).join(',');
+      return lat.toFixed(4)+', '+lng.toFixed(4);
+    }).catch(function(){ return lat.toFixed(4)+', '+lng.toFixed(4); });
+}
+function resultHTML(p){
+  var away=p.away===null?'':'<span class="away">'+
+    (p.away<1000?Math.round(p.away)+' m':(p.away/1000).toFixed(p.away<100000?1:0)+' km')+
+    ' away</span>';
+  return '<div data-lat="'+p.lat+'" data-lng="'+p.lng+'" data-name="'+esc(p.name)+'">'+
+    '<div class="nm">'+esc(p.full)+'</div><div class="meta">'+
+    '<span class="chipx '+p.kind.cls+'">'+esc(p.kind.t)+'</span>'+away+'</div></div>';
+}
+function attachSearch(inputId,sugId,setter){
+  var inp=document.getElementById(inputId), sug=document.getElementById(sugId), tmr=null;
+  function pick(la,ln,label){
+    inp.value=label; sug.style.display='none';
+    var p={lat:la,lng:ln,name:label};
+    setter(p); saveRecent(p); drawEnds();
+  }
+  function wire(){
+    var items=sug.querySelectorAll('div[data-lat]');
+    for(var j=0;j<items.length;j++){
+      items[j].addEventListener('click',function(){
+        var la=parseFloat(this.getAttribute('data-lat'));
+        var ln=parseFloat(this.getAttribute('data-lng'));
+        if(isNaN(la)) return;
+        pick(la,ln,this.getAttribute('data-name'));
+      });
+    }
+  }
+  function showQuick(){
+    var h='';
+    if(navigator.geolocation && inputId==='fromIn'){
+      h+='<div class="sechead">Quick</div><div data-lat="LOC" data-lng="LOC" '+
+         'data-name="My location"><div class="nm">Use my current location</div>'+
+         '<div class="meta"><span class="chipx">GPS</span></div></div>';
+    }
+    var rec=loadRecent();
+    if(rec.length){
+      h+='<div class="sechead">Recent</div>';
+      for(var i=0;i<rec.length;i++){
+        h+='<div data-lat="'+rec[i].lat+'" data-lng="'+rec[i].lng+'" data-name="'+
+           esc(rec[i].name)+'"><div class="nm">'+esc(rec[i].name)+'</div>'+
+           '<div class="meta"><span class="chipx">recent</span></div></div>';
+      }
+    }
+    if(!h) return;
+    sug.innerHTML=h; sug.style.display='block';
+    var items=sug.querySelectorAll('div[data-lat]');
+    for(var j=0;j<items.length;j++){
+      items[j].addEventListener('click',function(){
+        if(this.getAttribute('data-lat')==='LOC'){
+          sug.style.display='none';
+          document.getElementById('useLoc').click();
+          return;
+        }
+        pick(parseFloat(this.getAttribute('data-lat')),
+             parseFloat(this.getAttribute('data-lng')),
+             this.getAttribute('data-name'));
+      });
+    }
+  }
+  inp.addEventListener('focus',function(){
+    if(this.value.trim().length<2) showQuick();
+  });
+  inp.addEventListener('input',function(){
+    var v=this.value.trim();
+    setter(null);
+    if(tmr) clearTimeout(tmr);
+    if(v.length<2){ showQuick(); return; }
+    tmr=setTimeout(function(){
+      sug.style.display='block';
+      sug.innerHTML='<div class="sechead">Searching...</div>';
+      searchPlaces(v).then(function(list){
+        if(!list.length){
+          sug.innerHTML='<div class="sechead">No places found. Add the district or state.</div>';
+          return;
+        }
+        var h='';
+        for(var i=0;i<list.length;i++) h+=resultHTML(list[i]);
+        sug.innerHTML=h; wire();
+      });
+    },550);
+  });
+  inp.addEventListener('keydown',function(ev){
+    if(ev.key!=='Enter') return;
+    ev.preventDefault();
+    var v=this.value.trim();
+    if(v.length<2) return;
+    if(tmr) clearTimeout(tmr);
+    sug.style.display='none'; inp.blur();
+    var was=inp.value; inp.value='Finding '+was+'...';
+    geocodeBest(v).then(function(p){
+      if(p) pick(p.lat,p.lng,p.name);
+      else{ inp.value=was;
+        toast('Place not found','Try adding the district or state.','red'); }
+    });
+  });
+  document.addEventListener('click',function(ev){
+    if(ev.target!==inp && !sug.contains(ev.target)) sug.style.display='none';
+  });
+}
+attachSearch('fromIn','fromSug',function(p){ fromPt=p; });
+attachSearch('toIn','toSug',function(p){ toPt=p; });
+
+function ensurePoint(which){
+  var pt=which==='from'?fromPt:toPt;
+  if(pt) return Promise.resolve(pt);
+  var inp=document.getElementById(which==='from'?'fromIn':'toIn');
+  var v=inp.value.trim();
+  if(v.length<2) return Promise.resolve(null);
+  return geocodeBest(v).then(function(p){
+    if(!p) return null;
+    inp.value=p.name;
+    if(which==='from') fromPt=p; else toPt=p;
+    saveRecent(p);
+    return p;
+  });
+}
+document.getElementById('useLoc').onclick=function(){
+  var btn=this; btn.textContent='Locating';
+  if(!navigator.geolocation){ btn.textContent='Locate me'; return; }
+  navigator.geolocation.getCurrentPosition(function(p){
+    myHomeLat=p.coords.latitude; myHomeLng=p.coords.longitude;
+    fromPt={lat:p.coords.latitude,lng:p.coords.longitude,name:'My location'};
+    document.getElementById('fromIn').value='My location';
+    btn.textContent='Locate me';
+    drawEnds();
+    reverseName(p.coords.latitude,p.coords.longitude).then(function(n){
+      if(fromPt && fromPt.name==='My location'){
+        fromPt.name=n; document.getElementById('fromIn').value=n;
+      }
+    });
+  },function(){
+    btn.textContent='Locate me';
+    toast('Location unavailable','Allow location access, or type a starting point.','red');
+  },{enableHighAccuracy:true,timeout:15000});
+};
+document.getElementById('swapBtn').onclick=function(){
+  var a=fromPt,b=toPt; fromPt=b; toPt=a;
+  var fi=document.getElementById('fromIn'), ti=document.getElementById('toIn');
+  var tmp=fi.value; fi.value=ti.value; ti.value=tmp;
+  drawEnds();
+};
+var pickMode=null;
+document.getElementById('pickTo').onclick=function(){
+  pickMode='to';
+  map.getContainer().style.cursor='crosshair';
+  toast('Pick on map','Touch the destination on the map below.');
+  document.getElementById('map').scrollIntoView({behavior:'smooth',block:'center'});
+};
+map.on('click',function(ev){
+  if(!pickMode) return;
+  var la=ev.latlng.lat, ln=ev.latlng.lng, which=pickMode;
+  pickMode=null; map.getContainer().style.cursor='';
+  var inp=document.getElementById(which==='from'?'fromIn':'toIn');
+  inp.value='Locating that point...';
+  var p={lat:la,lng:ln,name:la.toFixed(4)+', '+ln.toFixed(4)};
+  if(which==='from') fromPt=p; else toPt=p;
+  drawEnds();
+  reverseName(la,ln).then(function(n){ p.name=n; inp.value=n; saveRecent(p); });
+});
+function drawEnds(){
+  if(fromPin){ map.removeLayer(fromPin); fromPin=null; }
+  if(toPin){ map.removeLayer(toPin); toPin=null; }
+  var P=pal(), pts=[];
+  if(fromPt){
+    fromPin=L.circleMarker([fromPt.lat,fromPt.lng],{radius:9,color:P.start,weight:4,
+      fillColor:P.casing,fillOpacity:1}).addTo(map)
+      .bindPopup('<b>Start</b><br>'+esc(fromPt.name||''));
+    pts.push([fromPt.lat,fromPt.lng]);
+  }
+  if(toPt){
+    toPin=L.circleMarker([toPt.lat,toPt.lng],{radius:9,color:P.end,weight:4,
+      fillColor:P.casing,fillOpacity:1}).addTo(map)
+      .bindPopup('<b>Destination</b><br>'+esc(toPt.name||''));
+    pts.push([toPt.lat,toPt.lng]);
+  }
+  if(pts.length===2) map.fitBounds(pts,{padding:[45,45]});
+  else if(pts.length===1) map.setView(pts[0],13);
+}
+/* ================= ROUTING ================= */
+function stepText(st){
+  var m=st.maneuver||{}, type=m.type||'', mod=m.modifier||'', road=st.name||'';
+  var s='';
+  if(type==='depart') s='Head '+(mod||'off');
+  else if(type==='arrive') s='Arrive at destination';
+  else if(type==='turn') s='Turn '+mod;
+  else if(type==='new name') s='Continue';
+  else if(type==='merge') s='Merge '+mod;
+  else if(type==='on ramp') s='Take the ramp '+mod;
+  else if(type==='off ramp') s='Take the exit '+mod;
+  else if(type==='fork') s='Keep '+mod;
+  else if(type==='roundabout'||type==='rotary') s='At the roundabout, take exit '+(m.exit||'');
+  else if(type==='continue') s='Continue '+mod;
+  else s=(type+' '+mod).trim();
+  if(road) s+=' onto '+road;
+  return s.charAt(0).toUpperCase()+s.slice(1);
+}
+document.getElementById('routeBtn').onclick=function(){
+  var btn=this;
+  var fv=document.getElementById('fromIn').value.trim();
+  var tv=document.getElementById('toIn').value.trim();
+  if(fv.length<2 && tv.length<2){
+    toast('Two places needed','Type a starting point and a destination.','red');
+    return;
+  }
+  btn.disabled=true; btn.textContent='Finding places';
+  Promise.all([ensurePoint('from'),ensurePoint('to')]).then(function(res){
+    var a=res[0], b=res[1];
+    if(!a){ btn.disabled=false; btn.textContent='Get route';
+      toast('Start not found','Add the district, or tap Locate me.','red'); return; }
+    if(!b){ btn.disabled=false; btn.textContent='Get route';
+      toast('Destination not found','Add the district, or tap On map.','red'); return; }
+    drawEnds();
+    btn.textContent='Calculating route';
+    var url=OSRM+a.lng+','+a.lat+';'+b.lng+','+b.lat+
+            '?alternatives=true&overview=full&geometries=geojson&steps=true';
+    fetch(url).then(function(r){return r.json();}).then(function(d){
+      btn.disabled=false; btn.textContent='Get route';
+      if(!d.routes||!d.routes.length){
+        toast('No route found','No driving road between these two places.','red'); return;
+      }
+      buildAllRoutes(d.routes);
+      toast('Route ready',a.name+' to '+b.name,'ok');
+    }).catch(function(){
+      btn.disabled=false; btn.textContent='Get route';
+      toast('Routing unavailable','The routing service did not respond.','red');
+    });
+  });
+};
+function buildAllRoutes(list){
+  allRoutes=[];
+  for(var i=0;i<list.length && i<3;i++){
+    var r=list[i], coords=[], g=r.geometry.coordinates;
+    for(var j=0;j<g.length;j++) coords.push([g[j][1],g[j][0]]);
+    var cum=[0], c=0;
+    for(var j=1;j<coords.length;j++){
+      c+=dist(coords[j-1][0],coords[j-1][1],coords[j][0],coords[j][1]);
+      cum.push(c);
+    }
+    var steps=[];
+    if(r.legs && r.legs[0] && r.legs[0].steps){
+      var st=r.legs[0].steps;
+      for(var j=0;j<st.length;j++) steps.push({text:stepText(st[j]),d:st[j].distance});
+    }
+    allRoutes.push({coords:coords,cum:cum,steps:steps,
+      distance:r.distance,duration:r.duration,zones:[]});
+  }
+  scoreRoutes();
+  selectRoute(safestIndex());
+  renderChips();
+}
+function scoreRoutes(){
+  for(var i=0;i<allRoutes.length;i++){
+    var R=allRoutes[i]; R.zones=[];
+    for(var k=0;k<zones.length;k++){
+      var z=zones[k], best=Infinity, bi=0;
+      for(var j=0;j<R.coords.length;j++){
+        var d=dist(z.lat,z.lng,R.coords[j][0],R.coords[j][1]);
+        if(d<best){ best=d; bi=j; }
+      }
+      if(best<=ROUTE_CORRIDOR)
+        R.zones.push({z:z,offRoad:best,along:R.cum[bi],idx:bi});
+    }
+    R.zones.sort(function(a,b){ return a.along-b.along; });
+  }
+}
+function safestIndex(){
+  var best=0;
+  for(var i=1;i<allRoutes.length;i++){
+    var a=allRoutes[i], b=allRoutes[best];
+    if(a.zones.length<b.zones.length) best=i;
+    else if(a.zones.length===b.zones.length && a.duration<b.duration) best=i;
+  }
+  return best;
+}
+function renderChips(){
+  var box=document.getElementById('routeChips');
+  if(allRoutes.length<2){ box.style.display='none'; return; }
+  box.style.display='flex';
+  var h='';
+  for(var i=0;i<allRoutes.length;i++){
+    var R=allRoutes[i], n=R.zones.length;
+    var lbl=i===0?'Fastest':('Alternative '+i);
+    if(i===safestIndex() && n===0) lbl='Safest';
+    h+='<div class="rchip'+(i===activeRoute?' on':'')+'" data-i="'+i+'">'+
+       '<div class="lb">'+lbl+'</div><div class="mn">'+fmtKm(R.distance)+
+       ' &middot; '+fmtMin(R.duration)+'</div><div class="zn '+(n?'r':'g')+'">'+
+       (n?(n+' zone'+(n>1?'s':'')):'no zones')+'</div></div>';
+  }
+  box.innerHTML=h;
+  var chips=box.querySelectorAll('.rchip');
+  for(var j=0;j<chips.length;j++){
+    chips[j].addEventListener('click',function(){
+      selectRoute(parseInt(this.getAttribute('data-i'),10));
+      renderChips();
+    });
+  }
+}
+function selectRoute(i){
+  if(!allRoutes.length) return;
+  activeRoute=i;
+  var R=allRoutes[i], P=pal();
+  routeCoords=R.coords; routeCum=R.cum; routeSteps=R.steps;
+  routeZones=R.zones; announced={};
+  for(var k=0;k<altLines.length;k++) map.removeLayer(altLines[k]);
+  altLines=[];
+  if(routeLine){ map.removeLayer(routeLine); routeLine=null; }
+  if(routeGlow){ map.removeLayer(routeGlow); routeGlow=null; }
+  for(var j=0;j<allRoutes.length;j++){
+    if(j===i) continue;
+    altLines.push(L.polyline(allRoutes[j].coords,{color:P.alt,weight:4,
+      opacity:.5,dashArray:'7 8'}).addTo(map));
+  }
+  routeGlow=L.polyline(routeCoords,{color:P.casing,weight:11,opacity:.95}).addTo(map);
+  routeLine=L.polyline(routeCoords,{color:P.route,weight:6,opacity:1,
+    lineJoin:'round',lineCap:'round'}).addTo(map);
+  map.fitBounds(routeLine.getBounds(),{padding:[45,45]});
+  document.getElementById('sumDist').textContent=fmtKm(R.distance);
+  document.getElementById('sumTime').textContent=fmtMin(R.duration);
+  document.getElementById('sumBox').classList.add('show');
+  document.getElementById('startNav').style.display='block';
+  document.getElementById('gmapBtn').style.display='block';
+  document.getElementById('gmapBtn').href=
+    'https://www.google.com/maps/dir/?api=1&origin='+fromPt.lat+','+fromPt.lng+
+    '&destination='+toPt.lat+','+toPt.lng+'&travelmode=driving';
+  renderSteps();
+  drawRouteZoneMarks();
+  renderRouteZones();
+}
+function drawRouteZoneMarks(){
+  for(var k=0;k<routeZoneMarks.length;k++) map.removeLayer(routeZoneMarks[k]);
+  routeZoneMarks=[];
+  var P=pal();
+  for(var i=0;i<routeZones.length;i++){
+    var rz=routeZones[i];
+    var c=L.circle([rz.z.lat,rz.z.lng],{radius:(rz.z.radius||20),color:P.zone,
+      weight:2,fillColor:P.zone,fillOpacity:P.zoneFill}).addTo(map);
+    var m=L.marker([rz.z.lat,rz.z.lng],{icon:dangerIcon(),zIndexOffset:600})
+      .addTo(map).bindPopup(zonePopup(rz.z,'<br>'+fmtKm(rz.along)+' into the journey'));
+    routeZoneMarks.push(c); routeZoneMarks.push(m);
+  }
+}
+function renderSteps(){
+  var box=document.getElementById('stepList');
+  var tog=document.getElementById('stepsToggle');
+  var emp=document.getElementById('stepsEmpty');
+  if(!routeSteps.length){ emp.style.display='block'; tog.style.display='none'; return; }
+  emp.style.display='none'; tog.style.display='block';
+  var h='';
+  for(var i=0;i<routeSteps.length;i++){
+    h+='<div class="stp"><div class="n">'+fmtKm(routeSteps[i].d)+'</div>'+
+       '<div class="d">'+esc(routeSteps[i].text)+'</div></div>';
+  }
+  box.innerHTML=h;
+  tog.textContent='Show all '+routeSteps.length+' directions';
+}
+document.getElementById('stepsToggle').onclick=function(){
+  var f=document.getElementById('stepList');
+  f.classList.toggle('open');
+  this.textContent=f.classList.contains('open')?'Hide directions':
+    ('Show all '+routeSteps.length+' directions');
+};
+function findZonesOnRoute(){
+  if(!allRoutes.length){ renderRouteZones(); return; }
+  scoreRoutes();
+  routeZones=allRoutes[activeRoute].zones;
+  drawRouteZoneMarks();
+  renderChips();
+  renderRouteZones();
+}
+function renderRouteZones(){
+  var list=document.getElementById('routeZones');
+  var cnt=document.getElementById('rzCount');
+  var sum=document.getElementById('sumZones');
+  var box=document.getElementById('sumBox');
+  var note=document.getElementById('sumNote');
+  cnt.textContent=routeZones.length;
+  cnt.className=routeZones.length?'badge hot':'badge ok';
+  sum.textContent=routeZones.length;
+  sum.className=routeZones.length?'v warn':'v safe';
+  if(!routeZones.length){
+    list.innerHTML='<p class="empty">No accident zones lie on this route. The road ahead is clear.</p>';
+    box.classList.remove('risky');
+    if(routeCoords.length) note.textContent=
+      'No accident zones were reported along this route. Drive safely.';
+    return;
+  }
+  box.classList.add('risky');
+  note.textContent='Caution. '+routeZones.length+' accident '+
+    (routeZones.length===1?'zone lies':'zones lie')+
+    ' on this route. You will be warned by voice as you approach each one.';
+  var h='';
+  for(var i=0;i<routeZones.length;i++){
+    var rz=routeZones[i], z=rz.z;
+    h+='<div class="zrow"><div class="a"><div class="t">Accident zone '+(i+1)+'</div>'+
+       '<div class="km">'+fmtKm(rz.along)+' in</div></div>'+
+       '<div class="c">'+Number(z.lat).toFixed(5)+', '+Number(z.lng).toFixed(5)+
+       ' &middot; '+(z.radius||20)+' m radius</div>'+
+       '<div class="w">'+Math.round(rz.offRoad)+' m from the road &middot; '+
+       esc(z.time||'recent')+'</div></div>';
+  }
+  list.innerHTML=h;
+}
+/* ================= NAVIGATION ================= */
+function setNavBox(cls,big,det,mono){
+  var b=document.getElementById('navBox');
+  b.className='navbox show'+(cls?(' '+cls):'');
+  var bg=document.getElementById('navBig');
+  bg.className='big '+(cls==='crit'?'r':cls==='warn'?'a':'g');
+  bg.textContent=big;
+  document.getElementById('navDet').textContent=det;
+  document.getElementById('navMono').textContent=mono||'';
+}
+document.getElementById('startNav').onclick=function(){
+  if(!routeCoords.length) return;
+  if(!audioCtx){ try{ audioCtx=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} }
+  tone(880,1150,0.18,0.25);
+  navActive=true; announced={};
+  document.body.classList.add('tracking');
+  this.style.display='none';
+  document.getElementById('stopNav').style.display='block';
+  document.getElementById('d-snd').textContent='Enabled';
+  askNotify(); keepAwake();
+  speak('Navigation started. You will be warned before every accident zone.');
+  setNavBox('','Road clear','Waiting for your position.','');
+  if(navigator.geolocation){
+    navWatch=navigator.geolocation.watchPosition(function(p){
+      myLat=p.coords.latitude; myLng=p.coords.longitude;
+      navTick(); check();
+    },function(){
+      setNavBox('warn','Location off','Allow location access to receive warnings.','');
+    },{enableHighAccuracy:true,maximumAge:1500,timeout:20000});
+  }
+  toast('Navigation started','Voice warnings will sound before each accident zone.','ok');
+};
+document.getElementById('stopNav').onclick=function(){
+  navActive=false;
+  if(navWatch!==null && navigator.geolocation){
+    navigator.geolocation.clearWatch(navWatch); navWatch=null;
+  }
+  this.style.display='none';
+  document.getElementById('startNav').style.display='block';
+  document.getElementById('navBox').classList.remove('show');
+  stopAlarm();
+  speak('Navigation stopped.');
+};
+function navTick(){
+  if(!navActive || myLat===null || !routeCoords.length) return;
+  var mePos=nearestOnRoute(myLat,myLng);
+  var myAlong=routeCum[mePos.idx];
+  var remain=routeCum[routeCum.length-1]-myAlong;
+  var next=null, gap=Infinity;
+  for(var i=0;i<routeZones.length;i++){
+    var g=routeZones[i].along-myAlong;
+    if(g>-60 && g<gap){ gap=g; next=routeZones[i]; }
+  }
+  if(mePos.d>500){
+    setNavBox('warn','Off route','You are '+fmtKm(mePos.d)+
+      ' from the planned road. Rejoin or plan a new route.',
+      fmtKm(remain)+' remaining');
+    return;
+  }
+  if(!next){
+    setNavBox('','Road clear','No accident zones ahead on this route.',
+      fmtKm(remain)+' remaining to destination');
+    return;
+  }
+  var key=next.z.lat.toFixed(5)+next.z.lng.toFixed(5);
+  if(!announced[key]) announced[key]={};
+  var a=announced[key];
+  if(gap<=1000 && gap>500 && !a.k1){
+    a.k1=1; tone(880,700,0.26,0.28); warnVoice();
+    notify('Accident zone ahead','An accident zone is 1 kilometre ahead.',false);
+  }
+  if(gap<=500 && gap>200 && !a.k5){ a.k5=1; tone(920,720,0.28,0.30); warnVoice(); }
+  if(gap<=200 && gap>0 && !a.k2){
+    a.k2=1; tone(980,740,0.32,0.34); warnVoice();
+    notify('Accident zone in 200 metres','Slow down. An accident was reported here.',true);
+  }
+  var cls=gap<=200?'crit':gap<=1000?'warn':'';
+  var big=gap<=200?'Slow down':gap<=1000?'Zone ahead':'Road clear';
+  var det=gap<=200
+    ?'Accident zone immediately ahead. An accident was reported here recently.'
+    :'An accident zone lies ahead on your route. A voice warning will sound as you approach.';
+  setNavBox(cls,big,det,fmtKm(Math.max(0,gap))+' to the zone  |  '+fmtKm(remain)+' remaining');
+  if(gap<=200) startAlarm(Math.max(1,gap/10));
+  else if(!inZone) stopAlarm();
+}
+
+/* ================= PROXIMITY ================= */
+function countTo(target){
+  var el=document.getElementById('bigdist'), from=shownDist, t0=performance.now();
+  function step(t){
+    var p=Math.min((t-t0)/450,1), e=1-Math.pow(1-p,3);
+    el.textContent=Math.round(from+(target-from)*e);
+    if(p<1) requestAnimationFrame(step); else shownDist=target;
+  }
+  requestAnimationFrame(step);
+}
+function setArc(d,radius){
+  var span=radius*6, p=Math.max(0,Math.min(1,1-(d/span)));
+  document.getElementById('arc').style.strokeDashoffset=(RING*(1-p)).toFixed(1);
+}
+document.getElementById('enable').onclick=function(){
+  try{ audioCtx=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){}
+  tone(880,1100,0.18,0.25);
+  document.body.classList.add('tracking');
+  document.getElementById('d-snd').textContent='Enabled';
+  askNotify(); keepAwake();
+  toast('Monitoring started','Alarm sound is on. Keep this app open while travelling.','ok');
+  this.style.display='none';
+};
+document.getElementById('sim').onclick=function(){
+  if(!audioCtx){ try{ audioCtx=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} }
+  document.body.classList.add('tracking');
+  if(zones.length===0){ toast('No zone active','Trigger the device first, then simulate.'); return; }
+  simulate=!simulate;
+  if(simulate){
+    myLat=zones[0].lat+0.00005; myLng=zones[0].lng;
+    this.textContent='Leave simulated zone'; this.classList.add('on');
+  }else{
+    myLat=zones[0].lat+0.004; myLng=zones[0].lng;
+    this.textContent='Simulate entering zone'; this.classList.remove('on');
+  }
+  check();
+};
+function check(){
+  var nd=null, near=null;
+  if(myLat!==null){
+    for(var i=0;i<zones.length;i++){
+      var d=dist(myLat,myLng,zones[i].lat,zones[i].lng);
+      if(nd===null||d<nd){ nd=d; near=zones[i]; }
+    }
+    if(!meMarker){
+      meMarker=L.marker([myLat,myLng],{icon:L.divIcon({className:'',iconSize:[30,30],
+        iconAnchor:[15,15],
+        html:'<div class="usr"><div class="in" style="background:'+me.color+
+             '"></div><div class="ring2"></div><div class="lbl">You</div></div>'}),
+        zIndexOffset:500}).addTo(map);
+    } else meMarker.setLatLng([myLat,myLng]);
+  }
+  var b=document.body,
+      h=document.getElementById('headline'),
+      s=document.getElementById('subline'),
+      e=document.getElementById('eyebrow'),
+      sn=document.getElementById('s-near');
+  if(near && nd<=(near.radius||20)){
+    if(!inZone){
+      warnVoice();
+      toast('Danger zone entered','An accident was reported here recently.','red');
+      notify('Danger zone - slow down','You have entered an accident zone.',true);
+    }
+    inZone=true;
+    b.classList.add('danger');
+    e.textContent='Alarm active'; h.textContent='Slow down';
+    s.textContent='An accident was reported at this spot within the last few minutes. Emergency help or an obstruction may be on the road ahead.';
+    sn.textContent=nd.toFixed(0)+' m'; sn.className='v hot';
+    countTo(nd); setArc(nd,near.radius||20); startAlarm(nd);
+  }else{
+    if(inZone){ stopAlarm(); toast('Zone cleared','You have left the danger area.','ok'); }
+    inZone=false;
+    b.classList.remove('danger');
+    h.textContent='Road clear';
+    if(near){
+      e.textContent='Monitoring';
+      s.textContent='An incident zone is active nearby. You will be alerted if you come within its radius.';
+      sn.textContent=nd.toFixed(0)+' m'; sn.className='v';
+      countTo(nd); setArc(nd,near.radius||20);
+    }else if(myLat===null){
+      e.textContent='Standing by';
+      s.textContent='Start monitoring to be warned when you approach a recent accident site.';
+      sn.textContent='--'; sn.className='v';
+    }else{
+      e.textContent='Monitoring';
+      s.textContent='No incident zones are active near you right now.';
+      document.getElementById('bigdist').textContent='--';
+      document.getElementById('arc').style.strokeDashoffset=RING;
+      sn.textContent='--'; sn.className='v';
+    }
+  }
+}
+function refreshZoneCircles(){
+  for(var i=0;i<layers.length;i++) map.removeLayer(layers[i]);
+  layers=[];
+  var P=pal();
+  for(var i=0;i<zones.length;i++){
+    var z=zones[i], r=z.radius||20;
+    layers.push(L.circle([z.lat,z.lng],{radius:r,color:P.zone,weight:2,
+      fillColor:P.zone,fillOpacity:P.zoneFill*0.85}).addTo(map));
+    layers.push(L.marker([z.lat,z.lng],{icon:dangerIcon(),zIndexOffset:600})
+      .addTo(map).bindPopup(zonePopup(z,'')));
+  }
+}
+/* ================= I PROCEED ================= */
+function proceed(alertTs,title){
+  if(!me) return;
+  var body={name:me.name,uid:me.uid,color:me.color,
+            at:Math.floor(Date.now()/1000)};
+  fetch(FIREBASE_URL+'/responders/a'+alertTs+'/'+me.uid+'.json',
+    {method:'PUT',headers:{'Content-Type':'application/json'},
+     body:JSON.stringify(body)})
+    .then(function(r){
+      if(r.ok){
+        myResponses[alertTs]=1;
+        toast('You are responding','The group can now see that you are on the way.','ok');
+        speak('You are now responding. The group has been informed.');
+        refresh();
+      } else toast('Could not send','Check your internet connection.','red');
+    })
+    .catch(function(){ toast('Could not send','Check your internet connection.','red'); });
+}
+function respHTML(ts){
+  var r=responders['a'+ts];
+  var h='<div class="respbox">';
+  var names=[];
+  if(r){ for(var k in r){ if(r[k] && r[k].name) names.push(r[k]); } }
+  names.sort(function(a,b){ return a.at-b.at; });
+
+  if(names.length){
+    h+='<div class="resphead">'+names.length+
+       (names.length===1?' person responding':' people responding')+'</div>';
+    for(var i=0;i<names.length;i++){
+      var n=names[i];
+      var mine=(me && n.uid===me.uid);
+      h+='<div class="resp"><div class="dot" style="background:'+(n.color||'#1DB954')+'">'+
+         esc(initials(n.name))+'</div><div><div class="nm">'+esc(n.name)+
+         (mine?' (you)':'')+'</div><div class="st">is taking the necessary steps</div>'+
+         '</div></div>';
+    }
+  }else{
+    h+='<div class="resphead">Nobody has responded yet</div>';
+  }
+
+  var already = me && names.some(function(n){ return n.uid===me.uid; });
+  if(already){
+    h+='<button class="btn proceedBtn done" disabled>You are on the way</button>';
+  }else{
+    h+='<button class="btn b-red proceedBtn" data-ts="'+ts+'">I proceed</button>';
+  }
+  return h+'</div>';
+}
+function wireProceed(){
+  var bs=document.querySelectorAll('.proceedBtn[data-ts]');
+  for(var i=0;i<bs.length;i++){
+    bs[i].addEventListener('click',function(){
+      proceed(this.getAttribute('data-ts'));
+    });
+  }
+}
+
+/* ================= HISTORY ================= */
+function initHistoryMap(){
+  if(hmap) return;
+  hmap=L.map('hmap',{zoomControl:false}).setView([9.9252,78.1198],13);
+  L.control.zoom({position:'bottomright'}).addTo(hmap);
+  var cfg=MAP_STYLES[mapStyle];
+  hBaseLayer=L.tileLayer(cfg.url,{maxZoom:cfg.max,attribution:cfg.attr}).addTo(hmap);
+  if(cfg.light) hmap.getContainer().classList.add('light');
+}
+function renderHistory(hist){
+  var list=document.getElementById('histlist');
+  document.getElementById('hcount').textContent=hist.length;
+  document.getElementById('hcount').className=hist.length?'badge hot':'badge';
+  document.getElementById('h-total').textContent=hist.length;
+  var now=Math.floor(Date.now()/1000), week=0;
+  for(var i=0;i<hist.length;i++) if(now-hist[i].ts<604800) week++;
+  document.getElementById('h-week').textContent=week;
+  if(!hist.length){ list.innerHTML='<p class="empty">No incidents recorded yet.</p>'; return; }
+  var h='';
+  for(var i=0;i<hist.length;i++){
+    var e=hist[i], sos=(e.kind==='SOS');
+    var g=(e.gForce!==undefined)?(' | '+Number(e.gForce).toFixed(2)+' G'):'';
+    var t=(e.tilt!==undefined)?(' | '+e.tilt+' deg'):'';
+    h+='<div class="hist'+(sos?' sos':'')+'"><div class="hi">'+
+       (sos?'<svg viewBox="0 0 24 24"><path d="M12 2v6M12 16v6M2 12h6M16 12h6"/><circle cx="12" cy="12" r="3"/></svg>'
+           :'<svg viewBox="0 0 24 24"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>')+
+       '</div><div class="hb"><div class="t">'+(sos?'Manual SOS':'Accident')+'</div>'+
+       '<div class="c">'+Number(e.lat).toFixed(5)+', '+Number(e.lng).toFixed(5)+g+t+'</div>'+
+       '<div class="w">'+esc(e.time||'')+' &middot; <a href="https://www.google.com/maps?q='+
+       e.lat+','+e.lng+'" target="_blank">Open in maps</a></div></div></div>';
+  }
+  list.innerHTML=h;
+  if(hmap){
+    for(var k=0;k<hlayers.length;k++) hmap.removeLayer(hlayers[k]);
+    hlayers=[]; var pts=[], P=pal();
+    for(var i=0;i<hist.length;i++){
+      var e=hist[i], col=e.kind==='SOS'?P.veh:P.zone;
+      var mk=L.circleMarker([e.lat,e.lng],{radius:8,color:P.casing,weight:2,
+        fillColor:col,fillOpacity:.9}).addTo(hmap)
+        .bindPopup((e.kind==='SOS'?'Manual SOS':'Accident')+'<br>'+esc(e.time||''));
+      hlayers.push(mk); pts.push([e.lat,e.lng]);
+    }
+    if(pts.length===1) hmap.setView(pts[0],16);
+    else if(pts.length>1) hmap.fitBounds(pts,{padding:[30,30],maxZoom:16});
+  }
+}
+
+/* ================= SETTINGS ================= */
+function labelDuration(sec){
+  if(sec<3600) return (sec/60)+' min';
+  if(sec<86400) return (sec/3600)+' hr';
+  var d=sec/86400; return d+(d===1?' day':' days');
+}
+document.getElementById('saveCfg').onclick=function(){
+  var life=parseInt(document.getElementById('setLife').value,10);
+  var rad=parseInt(document.getElementById('setRad').value,10);
+  var btn=this; btn.textContent='Saving';
+  fetch(FIREBASE_URL+'/config.json',{method:'PUT',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({zoneLifetimeSec:life,zoneRadiusM:rad})
+  }).then(function(r){
+    if(r.ok){
+      btn.textContent='Saved';
+      toast('Settings saved','New zones will use '+labelDuration(life)+' duration and '+
+            rad+' m radius.','ok');
+      document.getElementById('d-rad').textContent=rad+' m';
+      document.getElementById('d-life').textContent=labelDuration(life);
+    } else btn.textContent='Save failed';
+    setTimeout(function(){ btn.textContent='Save settings'; },2200);
+  }).catch(function(){
+    btn.textContent='Save failed';
+    setTimeout(function(){ btn.textContent='Save settings'; },2200);
+  });
+};
+
+/* ================= LIVE DATA ================= */
+function refresh(){
+  if(!me) return;
+  fetch(FIREBASE_URL+'/.json').then(function(r){return r.json();}).then(function(d){
+    document.getElementById('d-db').textContent='Connected';
+    zones=[]; var now=Math.floor(Date.now()/1000);
+
+    if(d && d.zones){
+      for(var k in d.zones){
+        var z=d.zones[k];
+        if(z && z.active && z.expiresAt>now){
+          zones.push(z);
+          var key=z.lat.toFixed(5)+z.lng.toFixed(5);
+          if(!seenZones[key]){
+            seenZones[key]=1;
+            toast('New incident reported','A crash was detected. The area is now marked.','red');
+            notify('Accident reported nearby','A crash was detected and the area is marked.',true);
+          }
+        }
+      }
+    }
+    refreshZoneCircles();
+    var sz=document.getElementById('s-zones');
+    sz.textContent=zones.length; sz.className=zones.length?'v hot':'v';
+    if(zones.length) document.getElementById('d-rad').textContent=(zones[0].radius||20)+' m';
+    findZonesOnRoute();
+
+    otherUsers=[];
+    if(d && d.users){
+      for(var uk in d.users){
+        var u=d.users[uk];
+        if(!u || uk===me.uid || u.lat===undefined) continue;
+        otherUsers.push({uid:uk,name:u.name||'Rider',color:u.color||'#1DB954',
+          lat:u.lat,lng:u.lng,updatedAt:u.updatedAt||0});
+      }
+    }
+    drawUsers();
+
+    responders=(d && d.responders) ? d.responders : {};
+
+    histCache=[];
+    if(d && d.history){
+      for(var hk in d.history){ var he=d.history[hk]; if(he && he.ts) histCache.push(he); }
+      histCache.sort(function(x,y){ return y.ts-x.ts; });
+    }
+    renderHistory(histCache);
+
+    if(d && d.config && !cfgLoaded){
+      cfgLoaded=true;
+      if(d.config.zoneLifetimeSec){
+        document.getElementById('setLife').value=String(d.config.zoneLifetimeSec);
+        document.getElementById('d-life').textContent=labelDuration(d.config.zoneLifetimeSec);
+      }
+      if(d.config.zoneRadiusM){
+        document.getElementById('setRad').value=String(d.config.zoneRadiusM);
+        document.getElementById('d-rad').textContent=d.config.zoneRadiusM+' m';
+      }
+    }
+
+    var al=[];
+    if(d && d.alerts){
+      for(var ak in d.alerts){ var a=d.alerts[ak]; if(a && a.ts) al.push(a); }
+      al.sort(function(x,y){ return y.ts-x.ts; });
+      if(al.length>8) al=al.slice(0,8);
+    }
+    var alist=document.getElementById('alertlist');
+    var acnt=document.getElementById('acount');
+    acnt.textContent=al.length;
+    acnt.className=al.length?'badge hot':'badge';
+
+    if(!al.length){
+      alist.innerHTML='<p class="empty">No alerts yet. Messages sent to the family group appear here.</p>';
+      document.getElementById('homefeed').innerHTML=
+        '<p class="empty">Nothing reported yet. Roads are clear.</p>';
+    }else{
+      var ah='';
+      for(var i=0;i<al.length;i++){
+        var a=al[i], red=(a.type!=='CLEARED');
+        var ic = red
+          ? '<svg viewBox="0 0 24 24"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>'
+          : '<svg viewBox="0 0 24 24"><path d="m5 13 4 4L19 7"/></svg>';
+        ah+='<div class="alrt'+(red?' red':'')+'"><div class="ah"><div class="ai">'+ic+
+            '</div><div class="at">'+esc(a.title)+'</div></div>'+
+            '<div class="ab">'+esc(a.body)+'</div>'+
+            '<div class="aw">'+esc(a.time||'')+'</div>'+
+            (red?respHTML(a.ts):'')+'</div>';
+        if(!seenAlerts[a.ts]){
+          seenAlerts[a.ts]=1;
+          if(!firstAlertLoad){
+            notify(a.title,a.body,red);
+            if(currentPage!=='alerts') document.getElementById('alertpip').classList.add('show');
+          }
+        }
+      }
+      alist.innerHTML=ah;
+      wireProceed();
+
+      var top=al[0], topRed=(top.type!=='CLEARED');
+      document.getElementById('homefeed').innerHTML=
+        '<div class="alrt'+(topRed?' red':'')+'"><div class="ah"><div class="ai">'+
+        (topRed?'<svg viewBox="0 0 24 24"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>'
+               :'<svg viewBox="0 0 24 24"><path d="m5 13 4 4L19 7"/></svg>')+
+        '</div><div class="at">'+esc(top.title)+'</div></div>'+
+        '<div class="ab">'+esc(top.body)+'</div>'+
+        '<div class="aw">'+esc(top.time||'')+'</div></div>';
+    }
+    firstAlertLoad=false;
+
+    if(d && d.vehicle){
+      var age=now-d.vehicle.updatedAt;
+      document.getElementById('vrider').textContent=d.vehicle.rider||'--';
+      document.getElementById('vplate').textContent=d.vehicle.vehicle||'--';
+      document.getElementById('plate').textContent=d.vehicle.vehicle||'--';
+      document.getElementById('vpos').textContent=
+        d.vehicle.lat.toFixed(5)+', '+d.vehicle.lng.toFixed(5);
+      document.getElementById('vsat').textContent=d.vehicle.satellites;
+      document.getElementById('vage').innerHTML=
+        '<span class="fresh'+(age>45?' stale':'')+'"></span>'+ago(age);
+      var sg=document.getElementById('s-gps');
+      sg.textContent=(age>60)?'Offline':(d.vehicle.satellites+' sats');
+      sg.className=(age>60)?'v sm hot':'v sm ok';
+      var P=pal();
+      if(!vehMarker){
+        vehMarker=L.circleMarker([d.vehicle.lat,d.vehicle.lng],{radius:8,
+          color:P.casing,weight:3,fillColor:P.veh,fillOpacity:1})
+          .addTo(map).bindPopup('<b>Bike</b><br>'+esc(d.vehicle.rider||''));
+      } else vehMarker.setLatLng([d.vehicle.lat,d.vehicle.lng]);
+    }
+
+    check();
+  }).catch(function(){
+    document.getElementById('d-db').textContent='No connection';
+    document.getElementById('eyebrow').textContent='No connection';
+    document.getElementById('subline').textContent=
+      'Cannot reach the incident database. Check your internet connection.';
+  });
+}
+askNotify();
+</script>
+</body>
+</html>

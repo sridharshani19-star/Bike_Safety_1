@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#000000">
+<meta name="description" content="Smart Bike Accident Detection and Emergency Alert System - an IoT road safety project that detects crashes, alerts family instantly and warns other riders about accident prone zones.">
+<title>We Care, We Alert — Smart Bike Accident Detection System</title>
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --black:#000; --bg:#0B0B0C; --elev:#151517; --card:#1C1C1F; --line:#2A2A2E;
+  --ink:#FFF; --sub:#B3B3B3; --dim:#6E6E75;
+  --green:#1DB954; --red:#F03A47; --amber:#FFC531; --blue:#3B82F6; --violet:#A855F7;
+  --e:cubic-bezier(.3,0,.2,1);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--black);color:var(--ink);
+  font-family:'Figtree',system-ui,sans-serif;-webkit-font-smoothing:antialiased;
+  line-height:1.6;overflow-x:hidden}
+.wrap{max-width:1080px;margin:0 auto;padding:0 22px}
+
+/* nav */
+nav{position:sticky;top:0;z-index:90;background:rgba(0,0,0,.82);
+  backdrop-filter:blur(18px);border-bottom:1px solid var(--line)}
+nav .wrap{display:flex;align-items:center;justify-content:space-between;
+  gap:16px;height:64px}
+.nlogo{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--ink)}
+.nlogo svg{width:30px;height:30px;flex:none}
+.nlogo b{font-size:15px;font-weight:800;letter-spacing:-.01em;white-space:nowrap}
+.nlinks{display:flex;gap:4px;overflow-x:auto}
+.nlinks::-webkit-scrollbar{display:none}
+.nlinks a{color:var(--sub);text-decoration:none;font-size:13.5px;font-weight:600;
+  padding:8px 12px;border-radius:500px;white-space:nowrap;transition:all .2s}
+.nlinks a:hover{color:var(--ink);background:rgba(255,255,255,.07)}
+.ncta{background:var(--green)!important;color:#000!important}
+
+/* hero */
+header.hero{padding:70px 0 60px;text-align:center;position:relative;overflow:hidden}
+header.hero::before{content:'';position:absolute;inset:0;
+  background:radial-gradient(80% 55% at 50% 0%,rgba(29,185,84,.22),transparent 62%);
+  pointer-events:none}
+.hero .in{position:relative}
+.hlogo{width:min(78vw,360px);margin:0 auto 26px}
+.hlogo svg{width:100%;height:auto;display:block}
+h1{font-size:clamp(32px,6.4vw,60px);font-weight:900;letter-spacing:-.035em;
+  line-height:1.02;margin:0 0 18px}
+.grad{background:linear-gradient(96deg,#1DB954,#22D3EE 55%,#A855F7);
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+.lead{font-size:clamp(15px,2.3vw,19px);color:var(--sub);max-width:58ch;
+  margin:0 auto 30px}
+.cta{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.btn{border:none;border-radius:500px;padding:14px 28px;font-size:15px;font-weight:800;
+  cursor:pointer;font-family:'Figtree',sans-serif;text-decoration:none;display:inline-block;
+  transition:transform .14s var(--e),filter .2s}
+.btn:hover{transform:scale(1.04)}
+.b-green{background:var(--green);color:#000}
+.b-out{background:transparent;color:var(--ink);border:1px solid #444}
+.b-out:hover{border-color:var(--ink)}
+
+/* sections */
+section{padding:64px 0;border-top:1px solid var(--line)}
+.eyebrow{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.22em;
+  text-transform:uppercase;color:var(--green);font-weight:600;margin-bottom:14px}
+h2{font-size:clamp(25px,4.3vw,40px);font-weight:900;letter-spacing:-.028em;
+  line-height:1.1;margin:0 0 16px}
+h3{font-size:clamp(18px,2.6vw,23px);font-weight:800;letter-spacing:-.018em;
+  margin:34px 0 12px}
+p{color:var(--sub);margin:0 0 15px;max-width:72ch}
+p.big{font-size:17px;color:#CFCFCF}
+strong{color:var(--ink);font-weight:700}
+a.ln{color:var(--green);font-weight:600}
+
+/* stats */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));
+  gap:14px;margin:28px 0 20px}
+.stat{background:var(--elev);border-radius:13px;padding:22px 20px;
+  border-left:3px solid var(--red)}
+.stat.g{border-left-color:var(--green)}
+.stat.a{border-left-color:var(--amber)}
+.stat.b{border-left-color:var(--blue)}
+.stat .n{font-size:clamp(28px,4.6vw,40px);font-weight:900;letter-spacing:-.03em;
+  line-height:1;font-family:'IBM Plex Mono',monospace}
+.stat .l{font-size:13px;color:var(--sub);margin-top:9px;line-height:1.45}
+.src{font-size:12px;color:var(--dim);font-style:italic;margin-top:6px}
+
+/* cards */
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin:24px 0}
+.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px;margin:24px 0}
+.card{background:var(--elev);border-radius:13px;padding:24px 22px;
+  border:1px solid var(--line);transition:border-color .25s,transform .25s var(--e)}
+.card:hover{border-color:#3D3D42;transform:translateY(-3px)}
+.card .ic{width:42px;height:42px;border-radius:11px;display:flex;align-items:center;
+  justify-content:center;margin-bottom:15px}
+.card .ic svg{width:21px;height:21px;stroke:#000;fill:none;stroke-width:2.2;
+  stroke-linecap:round;stroke-linejoin:round}
+.card h4{font-size:17px;font-weight:800;margin:0 0 9px;letter-spacing:-.012em}
+.card p{font-size:14px;margin:0;color:var(--sub)}
+
+/* table */
+.tbl{width:100%;border-collapse:collapse;margin:22px 0;font-size:14px;
+  background:var(--elev);border-radius:12px;overflow:hidden;display:block;
+  overflow-x:auto;white-space:nowrap}
+.tbl thead th{background:var(--card);text-align:left;padding:13px 16px;
+  font-size:11.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--dim)}
+.tbl td{padding:13px 16px;border-top:1px solid var(--line);color:var(--sub)}
+.tbl td:first-child{color:var(--ink);font-weight:600}
+.tbl code{font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:var(--green)}
+
+/* misc */
+.note{background:var(--elev);border-left:3px solid var(--amber);border-radius:0 11px 11px 0;
+  padding:17px 20px;margin:24px 0}
+.note b{color:var(--amber);display:block;margin-bottom:5px;font-size:14px}
+.note p{margin:0;font-size:14px}
+ul.tick{list-style:none;padding:0;margin:16px 0}
+ul.tick li{padding:9px 0 9px 30px;position:relative;color:var(--sub);font-size:15px}
+ul.tick li::before{content:'';position:absolute;left:4px;top:17px;width:9px;height:9px;
+  border-radius:50%;background:var(--green)}
+ul.tick li.x::before{background:var(--red)}
+ul.tick b{color:var(--ink)}
+.figure{margin:28px 0;background:var(--elev);border-radius:14px;padding:22px 18px;
+  border:1px solid var(--line);overflow-x:auto}
+.figure svg{display:block;margin:0 auto;max-width:100%;height:auto}
+.figcap{font-size:13px;color:var(--dim);text-align:center;margin-top:14px}
+footer{padding:48px 0 60px;border-top:1px solid var(--line);text-align:center}
+footer p{font-size:13px;color:var(--dim);margin:0 auto 8px}
+.pill{display:inline-block;background:var(--card);border-radius:500px;padding:5px 13px;
+  font-size:12px;font-weight:700;color:var(--sub);margin:3px}
+@media(max-width:600px){
+  nav .wrap{height:auto;padding-top:10px;padding-bottom:10px;flex-wrap:wrap}
+  .nlinks{width:100%;padding-bottom:4px}
+  section{padding:48px 0}
+}
+</style>
+</head>
+<body>
+<nav>
+  <div class="wrap">
+    <a class="nlogo" href="#top">
+      <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="60" cy="60" r="56" fill="#0F0F0F" stroke="#2A2A2A" stroke-width="3"/>
+        <ellipse cx="60" cy="90" rx="29" ry="8" fill="none" stroke="#8BC63F" stroke-width="5"/>
+        <path d="M60 24c-16 0-29 13-29 29 0 20 29 46 29 46s29-26 29-46c0-16-13-29-29-29z" fill="#1B62C4"/>
+        <circle cx="60" cy="52" r="12" fill="#0F0F0F"/>
+      </svg>
+      <b>We Care, We Alert</b>
+    </a>
+    <div class="nlinks">
+      <a href="#problem">Problem</a>
+      <a href="#solution">Solution</a>
+      <a href="#how">How it works</a>
+      <a href="#hardware">Hardware</a>
+      <a href="#app">The app</a>
+      <a href="#tech">Tech</a>
+      <a class="ncta" href="index.html">Open app</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero" id="top">
+  <div class="wrap in">
+    <div class="hlogo">
+      <svg viewBox="0 0 620 250" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="118" cy="125" r="104" fill="#0A0A0A" stroke="#2A2A2A" stroke-width="3"/>
+        <ellipse cx="118" cy="186" rx="58" ry="15" fill="none" stroke="#8BC63F" stroke-width="7"/>
+        <path d="M118 52c-30 0-54 24-54 54 0 38 54 88 54 88s54-50 54-88c0-30-24-54-54-54z" fill="#1B62C4"/>
+        <circle cx="118" cy="104" r="24" fill="#0A0A0A"/>
+        <text x="252" y="112" font-family="Figtree,Arial" font-size="60" font-weight="900" fill="#F4F4F4">WE CARE,</text>
+        <text x="252" y="182" font-family="Figtree,Arial" font-size="60" font-weight="900" fill="#1B62C4">WE ALERT.</text>
+      </svg>
+    </div>
+    <h1>Every accident becomes a<br><span class="grad">warning for the next rider</span></h1>
+    <p class="lead">An IoT road safety system that detects motorcycle crashes automatically,
+    alerts family with the exact location within seconds, and turns that location into a
+    live warning zone so other riders slow down before they reach it.</p>
+    <div class="cta">
+      <a class="btn b-green" href="index.html">Open the live app</a>
+      <a class="btn b-out" href="#how">See how it works</a>
+    </div>
+  </div>
+</header>
+
+<section id="problem">
+  <div class="wrap">
+    <div class="eyebrow">The problem</div>
+    <h2>India loses a life to a road crash<br>every three minutes</h2>
+    <p class="big">Motorcycles carry the heaviest share of that toll. When a rider goes down
+    alone on a highway, the minutes that follow decide whether they live. Yet the most common
+    outcome is that nobody knows an accident has happened at all.</p>
+
+    <div class="stats">
+      <div class="stat"><div class="n">1,68,491</div>
+        <div class="l">People killed on Indian roads in a single year</div></div>
+      <div class="stat a"><div class="n">44.5%</div>
+        <div class="l">Of those deaths were two-wheeler riders</div></div>
+      <div class="stat b"><div class="n">4,61,312</div>
+        <div class="l">Road accidents recorded in the same year</div></div>
+      <div class="stat g"><div class="n">60 min</div>
+        <div class="l">The golden hour: survival odds fall sharply after it</div></div>
+    </div>
+    <p class="src">Figures from the Ministry of Road Transport and Highways,
+    Road Accidents in India (2022 annual report). Verify against the latest
+    edition before citing in academic work.</p>
+
+    <h3>What actually goes wrong</h3>
+    <ul class="tick">
+      <li class="x"><b>Nobody knows.</b> An unconscious rider cannot call for help, and a
+      crash on an empty stretch can go unnoticed for many minutes.</li>
+      <li class="x"><b>Family cannot find them.</b> Even when informed, relatives rarely
+      know the exact spot on a long highway.</li>
+      <li class="x"><b>Existing systems stop at notification.</b> An alert is sent, and
+      that is the end of it. The information dies there.</li>
+      <li class="x"><b>Nobody moves.</b> A message reaches a group of ten people and every
+      one of them assumes somebody else is already going. This is the bystander effect,
+      and it costs time that the injured rider does not have.</li>
+      <li class="x"><b>Danger is invisible to others.</b> A crash site with an obstruction,
+      spilled oil or emergency vehicles is a hazard to every rider arriving next. No system
+      tells them.</li>
+      <li class="x"><b>Fastest is not safest.</b> Navigation apps optimise for time. None of
+      them know where accidents just happened.</li>
+    </ul>
+  </div>
+</section>
+
+<section id="solution">
+  <div class="wrap">
+    <div class="eyebrow">Our approach</div>
+    <h2>Detect. Alert. Locate. Warn.</h2>
+    <p class="big">The device on the bike does more than raise an alarm. Every accident it
+    detects is written into a shared map that other riders read in real time. One rider's
+    crash becomes the next rider's warning.</p>
+
+    <div class="grid3">
+      <div class="card"><div class="ic" style="background:#F03A47">
+        <svg viewBox="0 0 24 24"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg></div>
+        <h4>Detect</h4><p>Three independent sensors confirm a crash before anything is sent,
+        so a pothole does not trigger a false emergency.</p></div>
+      <div class="card"><div class="ic" style="background:#FFC531">
+        <svg viewBox="0 0 24 24"><path d="M18 8.5a6 6 0 1 0-12 0c0 6-2.5 7.5-2.5 7.5h17S18 14.5 18 8.5"/><path d="M13.7 20a2 2 0 0 1-3.4 0"/></svg></div>
+        <h4>Alert</h4><p>Family receive the exact coordinates, the time, the impact force
+        and a one-tap navigation link within seconds.</p></div>
+      <div class="card"><div class="ic" style="background:#3B82F6">
+        <svg viewBox="0 0 24 24"><path d="M12 21s-7-6.4-7-11a7 7 0 1 1 14 0c0 4.6-7 11-7 11z"/><circle cx="12" cy="10" r="2.6"/></svg></div>
+        <h4>Locate</h4><p>GPS fixes the spot to within a few metres and ride-booking links
+        are pre-filled for anyone without a vehicle.</p></div>
+      <div class="card"><div class="ic" style="background:#A855F7">
+        <svg viewBox="0 0 24 24"><path d="M17 17H7l-1.5 3h13L17 17z"/><circle cx="12" cy="9" r="6"/></svg></div>
+        <h4>Respond</h4><p>An <b>I proceed</b> button lets one person claim the response,
+        so the group knows who is on the way instead of everyone waiting.</p></div>
+      <div class="card"><div class="ic" style="background:#1DB954">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3v18M3 12h18"/></svg></div>
+        <h4>Warn</h4><p>The location becomes an accident zone. Riders approaching it hear a
+        spoken warning at one kilometre, five hundred and two hundred metres.</p></div>
+      <div class="card"><div class="ic" style="background:#22D3EE">
+        <svg viewBox="0 0 24 24"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg></div>
+        <h4>Learn</h4><p>Every incident is stored permanently. Repeated markers in one place
+        reveal a genuinely dangerous stretch of road.</p></div>
+    </div>
+  </div>
+</section>
+<section id="how">
+  <div class="wrap">
+    <div class="eyebrow">How it works</div>
+    <h2>From impact to warning<br>in under thirty seconds</h2>
+
+    <div class="figure">
+      <svg viewBox="0 0 880 620" xmlns="http://www.w3.org/2000/svg" role="img"
+           aria-label="Flow chart from sensors through crash detection to alerts and warning zones">
+        <defs>
+          <marker id="ar" markerWidth="9" markerHeight="9" refX="7" refY="3.2" orient="auto">
+            <path d="M0 0 L7 3.2 L0 6.4 z" fill="#4A4A52"/></marker>
+          <style>
+            .bx{fill:#1C1C1F;stroke:#2F2F35;stroke-width:1.6;rx:11}
+            .lb{fill:#FFF;font-family:Figtree,Arial;font-size:14px;font-weight:700}
+            .sm{fill:#9A9AA2;font-family:Figtree,Arial;font-size:11.5px}
+            .ln{stroke:#4A4A52;stroke-width:1.8;fill:none;marker-end:url(#ar)}
+            .gr{fill:#1DB954;font-family:Figtree,Arial;font-size:11.5px;font-weight:700}
+            .rd{fill:#F03A47;font-family:Figtree,Arial;font-size:11.5px;font-weight:700}
+          </style>
+        </defs>
+
+        <rect class="bx" x="40" y="20" width="180" height="62"/>
+        <text class="lb" x="130" y="46" text-anchor="middle">MPU6050</text>
+        <text class="sm" x="130" y="66" text-anchor="middle">G-force and tilt</text>
+
+        <rect class="bx" x="350" y="20" width="180" height="62"/>
+        <text class="lb" x="440" y="46" text-anchor="middle">SW-420</text>
+        <text class="sm" x="440" y="66" text-anchor="middle">Vibration</text>
+
+        <rect class="bx" x="660" y="20" width="180" height="62"/>
+        <text class="lb" x="750" y="46" text-anchor="middle">NEO-M8N</text>
+        <text class="sm" x="750" y="66" text-anchor="middle">GPS position</text>
+
+        <path class="ln" d="M130 82 L130 112 L430 112 L430 138"/>
+        <path class="ln" d="M440 82 L440 138"/>
+        <path class="ln" d="M750 82 L750 112 L450 112 L450 138"/>
+
+        <rect class="bx" x="330" y="140" width="220" height="62" style="stroke:#1DB954"/>
+        <text class="lb" x="440" y="166" text-anchor="middle">ESP32</text>
+        <text class="sm" x="440" y="186" text-anchor="middle">Crash detection logic</text>
+
+        <path class="ln" d="M440 202 L440 246"/>
+
+        <rect class="bx" x="310" y="248" width="260" height="62" style="stroke:#FFC531"/>
+        <text class="lb" x="440" y="274" text-anchor="middle">20 second countdown</text>
+        <text class="sm" x="440" y="294" text-anchor="middle">Buzzer sounds, rider can cancel</text>
+
+        <path class="ln" d="M310 279 L180 279 L180 330"/>
+        <text class="gr" x="238" y="272" text-anchor="middle">button pressed</text>
+        <rect class="bx" x="90" y="332" width="180" height="58" style="stroke:#1DB954"/>
+        <text class="lb" x="180" y="357" text-anchor="middle">Cancelled</text>
+        <text class="sm" x="180" y="376" text-anchor="middle">Rider is safe</text>
+
+        <path class="ln" d="M440 310 L440 354"/>
+        <text class="rd" x="500" y="336" text-anchor="middle">no response</text>
+
+        <rect class="bx" x="330" y="356" width="220" height="58" style="stroke:#F03A47"/>
+        <text class="lb" x="440" y="381" text-anchor="middle">Accident confirmed</text>
+        <text class="sm" x="440" y="400" text-anchor="middle">GPS position attached</text>
+
+        <path class="ln" d="M440 414 L440 442 L200 442 L200 470"/>
+        <path class="ln" d="M440 414 L440 470"/>
+        <path class="ln" d="M440 414 L440 442 L680 442 L680 470"/>
+
+        <rect class="bx" x="90" y="472" width="220" height="66"/>
+        <text class="lb" x="200" y="498" text-anchor="middle">Telegram alert</text>
+        <text class="sm" x="200" y="517" text-anchor="middle">Map, time, ride links</text>
+
+        <rect class="bx" x="330" y="472" width="220" height="66"/>
+        <text class="lb" x="440" y="498" text-anchor="middle">Push notification</text>
+        <text class="sm" x="440" y="517" text-anchor="middle">Even when app closed</text>
+
+        <rect class="bx" x="570" y="472" width="220" height="66" style="stroke:#A855F7"/>
+        <text class="lb" x="680" y="498" text-anchor="middle">Firebase database</text>
+        <text class="sm" x="680" y="517" text-anchor="middle">Zone created and logged</text>
+
+        <path class="ln" d="M680 538 L680 566"/>
+        <rect class="bx" x="480" y="568" width="400" height="44" style="stroke:#22D3EE"/>
+        <text class="lb" x="680" y="596" text-anchor="middle">Other riders warned by voice on their route</text>
+      </svg>
+      <div class="figcap">Figure 1 — End to end flow from sensor reading to community warning</div>
+    </div>
+
+    <h3>Step 1 — Three ways to detect a crash</h3>
+    <p>A single sensor produces false alarms. Speed bumps register as impacts. A bike on its
+    side stand registers as a fall. So three independent conditions are watched, and any one
+    of them is enough to start the countdown.</p>
+
+    <table class="tbl">
+      <thead><tr><th>Trigger</th><th>Condition</th><th>What it catches</th></tr></thead>
+      <tbody>
+        <tr><td>G-force</td><td><code>&gt; 2.5 G</code></td>
+          <td>A sudden hard collision</td></tr>
+        <tr><td>Tilt</td><td><code>&gt; 45&deg; held 4 s</code></td>
+          <td>The bike went down and stayed down</td></tr>
+        <tr><td>Vibration</td><td><code>4 shocks in 400 ms</code></td>
+          <td>Violent repeated impact</td></tr>
+      </tbody>
+    </table>
+
+    <div class="note"><b>Why the accelerometer learns its own position</b>
+      <p>At power on, the device averages 120 readings to learn its resting orientation.
+      That means it can be mounted at any angle on any bike, and tilt is measured against
+      that learned reference rather than a fixed assumption.</p></div>
+
+    <h3>Step 2 — The twenty second window</h3>
+    <p>A crash is not always an emergency. The buzzer sounds for twenty seconds, beeping
+    faster as time runs out. A conscious rider presses the button once and nothing is sent.
+    This single design decision is what makes the system usable in daily life rather than a
+    source of constant false alarms.</p>
+
+    <h3>Step 3 — The alert</h3>
+    <p>With no response, the message goes out carrying the exact coordinates, the date and
+    time in twelve hour format, which sensor triggered, the measured impact force, the tilt
+    angle, the satellite count for confidence, a map pin, a one-tap navigation link, and
+    pre-filled booking links for Uber, Ola and Rapido so a relative without a vehicle can
+    reach the spot immediately.</p>
+
+    <h3>Step 4 — Somebody claims the response</h3>
+    <p>This addresses a specific failure. When an alert reaches ten people, everyone assumes
+    someone else is going. The app shows an <strong>I proceed</strong> button on every
+    accident alert. The moment one person taps it, every other phone in the group displays
+    their name and the words <em>is taking the necessary steps</em>. Responsibility becomes
+    visible and unambiguous.</p>
+
+    <h3>Step 5 — The location becomes a warning</h3>
+    <p>The crash site is marked as an accident prone zone for a period the group chooses,
+    anywhere from two minutes to fifteen days, with a radius from ten to five hundred metres.
+    Any rider who comes within that radius gets a spoken warning, a repeating alarm and a
+    red screen. The zone clears itself automatically when it expires.</p>
+  </div>
+</section>
+
+<section id="route">
+  <div class="wrap">
+    <div class="eyebrow">The novel part</div>
+    <h2>Optimising for safety<br>instead of speed</h2>
+    <p class="big">Every navigation app in the world answers one question: which road is
+    fastest? This system asks a different one: which road has the fewest recent accidents?</p>
+
+    <div class="figure">
+      <svg viewBox="0 0 860 300" xmlns="http://www.w3.org/2000/svg" role="img"
+           aria-label="Three routes compared by number of accident zones">
+        <defs><style>
+          .rt{stroke-width:7;fill:none;stroke-linecap:round}
+          .tx{fill:#FFF;font-family:Figtree,Arial;font-size:14px;font-weight:700}
+          .ts{fill:#9A9AA2;font-family:Figtree,Arial;font-size:12px}
+        </style></defs>
+        <circle cx="70" cy="150" r="14" fill="#1DB954"/>
+        <text class="ts" x="70" y="196" text-anchor="middle">Start</text>
+        <circle cx="790" cy="150" r="14" fill="#F03A47"/>
+        <text class="ts" x="790" y="196" text-anchor="middle">Destination</text>
+
+        <path class="rt" d="M84 150 Q300 40 430 46 Q560 52 776 150" stroke="#6E6E75"/>
+        <text class="tx" x="430" y="30" text-anchor="middle">Route A — fastest, 3 zones</text>
+        <circle cx="280" cy="62" r="10" fill="#F03A47"/>
+        <circle cx="430" cy="46" r="10" fill="#F03A47"/>
+        <circle cx="580" cy="60" r="10" fill="#F03A47"/>
+
+        <path class="rt" d="M84 150 Q430 150 776 150" stroke="#6E6E75"/>
+        <text class="tx" x="430" y="140" text-anchor="middle">Route B — 1 zone</text>
+        <circle cx="430" cy="150" r="10" fill="#F03A47"/>
+
+        <path class="rt" d="M84 150 Q300 262 430 256 Q560 250 776 150" stroke="#1DB954"/>
+        <text class="tx" x="430" y="288" text-anchor="middle">Route C — selected, no zones</text>
+      </svg>
+      <div class="figcap">Figure 2 — The app measures every zone's perpendicular distance to
+      each road and selects the route crossing the fewest</div>
+    </div>
+
+    <p>When more than one road exists between two places, all of them are fetched. For every
+    active accident zone the app measures its perpendicular distance to each route line, and
+    counts only zones lying within a <strong>350 metre corridor</strong> of the road. A crash
+    on a parallel street is correctly ignored. The route with the fewest zones is selected
+    automatically, and the alternatives stay visible so the rider can choose for themselves.</p>
+
+    <p>The same calculation gives distance travelled along the route, which is how the app can
+    say <em>forty two kilometres into the journey</em> and count down as you approach.</p>
+  </div>
+</section>
+<section id="hardware">
+  <div class="wrap">
+    <div class="eyebrow">Hardware</div>
+    <h2>What sits on the bike</h2>
+    <p class="big">An ESP32 microcontroller with three sensors, a buzzer and a button. Total
+    component cost is under two thousand rupees.</p>
+
+    <table class="tbl">
+      <thead><tr><th>Component</th><th>Pin</th><th>ESP32</th><th>Purpose</th></tr></thead>
+      <tbody>
+        <tr><td>MPU6050</td><td>VCC / GND</td><td><code>3.3V / GND</code></td>
+          <td rowspan="2">Impact force and lean angle</td></tr>
+        <tr><td></td><td>SDA / SCL</td><td><code>GPIO 21 / 22</code></td></tr>
+        <tr><td>NEO-M8N GPS</td><td>VCC / GND</td><td><code>5V / GND</code></td>
+          <td rowspan="2">Position, satellites, accuracy</td></tr>
+        <tr><td></td><td>TX / RX</td><td><code>GPIO 16 / 17</code></td></tr>
+        <tr><td>SW-420</td><td>DO</td><td><code>GPIO 34</code></td>
+          <td>Vibration and shock</td></tr>
+        <tr><td>Active buzzer</td><td>+</td><td><code>GPIO 25</code></td>
+          <td>Twenty second countdown</td></tr>
+        <tr><td>Push button</td><td>Pin 1</td><td><code>GPIO 4</code></td>
+          <td>Cancel alarm, or hold 8 s for silent SOS</td></tr>
+      </tbody>
+    </table>
+
+    <div class="note"><b>Two design decisions worth explaining</b>
+      <p>A GSM module was tested first and removed after it failed to respond to commands at
+      every baud rate, inversion mode and parity setting. WiFi with Telegram replaced it and
+      proved more capable, carrying maps and links that SMS cannot. Separately, a simple tilt
+      switch was replaced by the MPU6050 to obtain an actual angle rather than an on or off
+      state, which is what makes the four second confirmation possible.</p></div>
+
+    <h3>Network resilience</h3>
+    <p>The device holds a list of WiFi networks and tries each in turn, rotating between them
+    if a connection drops. Network calls are blocked while the alarm is counting down, because
+    a TLS handshake can stall the processor for several seconds and the cancel button must stay
+    responsive at all times. A memory guard skips a network call rather than freezing when free
+    RAM falls below sixty kilobytes.</p>
+  </div>
+</section>
+
+<section id="app">
+  <div class="wrap">
+    <div class="eyebrow">The application</div>
+    <h2>A progressive web app<br>that installs like a native one</h2>
+    <p class="big">No app store, no download, no cost. Open the link, tap add to home screen,
+    and it behaves like any installed app with its own icon and full screen display.</p>
+
+    <div class="grid2">
+      <div class="card"><div class="ic" style="background:#1DB954">
+        <svg viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20h14V9.5"/></svg></div>
+        <h4>Home</h4><p>Live status, a proximity ring counting down the metres to the nearest
+        zone, and the most recent alert.</p></div>
+      <div class="card"><div class="ic" style="background:#22D3EE">
+        <svg viewBox="0 0 24 24"><path d="M12 2 4.5 21 12 17.5 19.5 21 12 2z"/></svg></div>
+        <h4>Navigate</h4><p>Worldwide place search, real road routing, accident zones flagged
+        along the way, and four map styles including satellite.</p></div>
+      <div class="card"><div class="ic" style="background:#F03A47">
+        <svg viewBox="0 0 24 24"><path d="M18 8.5a6 6 0 1 0-12 0c0 6-2.5 7.5-2.5 7.5h17S18 14.5 18 8.5"/><path d="M13.7 20a2 2 0 0 1-3.4 0"/></svg></div>
+        <h4>Alerts</h4><p>Every emergency message, with the I proceed button and a live list
+        of who has committed to respond.</p></div>
+      <div class="card"><div class="ic" style="background:#FFC531">
+        <svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 7.5V12l3 2"/></svg></div>
+        <h4>History</h4><p>A permanent record of every incident with impact force and tilt,
+        plotted on a map to reveal dangerous stretches.</p></div>
+      <div class="card"><div class="ic" style="background:#A855F7">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></div>
+        <h4>Setup</h4><p>Zone duration from two minutes to fifteen days, radius from ten to
+        five hundred metres, synchronised to the device within a minute.</p></div>
+      <div class="card"><div class="ic" style="background:#3B82F6">
+        <svg viewBox="0 0 24 24"><path d="M17 17H7l-1.5 3h13L17 17z"/><circle cx="12" cy="9" r="6"/></svg></div>
+        <h4>Live riders</h4><p>Everyone in the group appears on the map as a coloured dot with
+        their name, updating every fifteen seconds.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="tech">
+  <div class="wrap">
+    <div class="eyebrow">Technology</div>
+    <h2>Built entirely on free<br>and open services</h2>
+    <p class="big">The system has no per user running cost. No API key is purchased anywhere
+    in the stack, which means it can be handed to any number of riders without the cost
+    growing.</p>
+
+    <table class="tbl">
+      <thead><tr><th>Layer</th><th>Technology</th><th>Cost</th></tr></thead>
+      <tbody>
+        <tr><td>Microcontroller</td><td>ESP32, Arduino C++</td><td>Free</td></tr>
+        <tr><td>Database</td><td>Firebase Realtime Database</td><td>Free tier</td></tr>
+        <tr><td>Messaging</td><td>Telegram Bot API</td><td>Free</td></tr>
+        <tr><td>Push notifications</td><td>ntfy.sh</td><td>Free</td></tr>
+        <tr><td>Hosting</td><td>GitHub Pages</td><td>Free</td></tr>
+        <tr><td>Routing</td><td>OSRM</td><td>Free, open source</td></tr>
+        <tr><td>Place search</td><td>OpenStreetMap Nominatim</td><td>Free</td></tr>
+        <tr><td>Map tiles</td><td>CARTO, OpenStreetMap, Esri</td><td>Free tier</td></tr>
+        <tr><td>App packaging</td><td>PWABuilder</td><td>Free</td></tr>
+      </tbody>
+    </table>
+
+    <div class="grid3" style="margin-top:34px">
+      <div class="card"><h4>Spatial query</h4><p>Perpendicular distance from every zone to the
+      route polyline, filtered to a 350 metre corridor.</p></div>
+      <div class="card"><h4>Sensor fusion</h4><p>Three independent triggers with a learned
+      reference orientation and a four second confirmation window.</p></div>
+      <div class="card"><h4>Real time sync</h4><p>Device and every phone in the group read and
+      write the same database, converging within four seconds.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="impact">
+  <div class="wrap">
+    <div class="eyebrow">Impact</div>
+    <h2>Who this helps</h2>
+    <div class="grid3">
+      <div class="card"><h4>The rider</h4><p>Help is called even when they cannot call it
+      themselves. A manual SOS is always available by holding the button for eight seconds.</p></div>
+      <div class="card"><h4>The family</h4><p>They learn immediately, know exactly where, can
+      navigate straight there, and can see who among them is already going.</p></div>
+      <div class="card"><h4>Every other rider</h4><p>They are warned by voice before reaching
+      a fresh crash site, and can choose a road with fewer recent accidents.</p></div>
+    </div>
+
+    <h3>Honest limitations</h3>
+    <ul class="tick">
+      <li class="x"><b>No measured false positive rate yet.</b> Thresholds of 2.5 G and 45
+      degrees are reasoned but not yet validated against road testing data.</li>
+      <li class="x"><b>Requires network coverage.</b> A crash in a dead zone cannot report
+      until connectivity returns.</li>
+      <li class="x"><b>GPS drift.</b> Consumer GPS wanders several metres, so a twenty metre
+      zone boundary is approximate rather than exact.</li>
+      <li class="x"><b>Group scale.</b> The current design suits a family or friend group
+      rather than a city wide deployment, which would need proper authentication.</li>
+    </ul>
+    <p>Stating these plainly is deliberate. A safety system that overstates its reliability is
+    more dangerous than one that is honest about its edges.</p>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <p><strong>We Care, We Alert</strong> — Smart Bike Accident Detection and Emergency Alert System</p>
+    <p>Built with ESP32, Firebase, OpenStreetMap and OSRM. No paid service used anywhere.</p>
+    <div style="margin-top:18px">
+      <span class="pill">IoT</span><span class="pill">Road Safety</span>
+      <span class="pill">Embedded C++</span><span class="pill">Progressive Web App</span>
+      <span class="pill">Real time database</span><span class="pill">Geospatial</span>
+    </div>
+    <p style="margin-top:24px"><a class="ln" href="index.html">Open the live application</a></p>
+  </div>
+</footer>
+</body>
+</html>
